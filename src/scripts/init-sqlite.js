@@ -10,6 +10,43 @@ const __dirname = path.dirname(__filename);
 const dbPath = process.env.DB_PATH || path.join(__dirname, '../../data/com1.db');
 const schemaPath = path.join(__dirname, '../../db/schema.sqlite.sql');
 
+// Check for seed data if DB doesn't exist
+if (!fs.existsSync(dbPath)) {
+  const seedPath = path.join(__dirname, '../../seed/com1.db');
+  if (fs.existsSync(seedPath)) {
+    console.log(`Seeding database from ${seedPath}...`);
+    try {
+      const dbDir = path.dirname(dbPath);
+      if (!fs.existsSync(dbDir)) fs.mkdirSync(dbDir, { recursive: true });
+      fs.copyFileSync(seedPath, dbPath);
+      console.log('Database seeded successfully.');
+    } catch (e) {
+      console.error('Failed to seed database:', e);
+    }
+  }
+}
+
+// Check for seed uploads
+const uploadsDir = path.join(__dirname, '../../public/uploads');
+const seedUploadsDir = path.join(__dirname, '../../seed/uploads');
+if (fs.existsSync(seedUploadsDir)) {
+    console.log('Seeding uploads...');
+    try {
+        if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
+        const files = fs.readdirSync(seedUploadsDir);
+        for (const file of files) {
+            const src = path.join(seedUploadsDir, file);
+            const dest = path.join(uploadsDir, file);
+            if (!fs.existsSync(dest)) {
+                fs.copyFileSync(src, dest);
+            }
+        }
+        console.log(`Seeded ${files.length} upload files.`);
+    } catch (e) {
+        console.error('Failed to seed uploads:', e);
+    }
+}
+
 console.log(`Initializing SQLite database at ${dbPath}...`);
 
 try {
