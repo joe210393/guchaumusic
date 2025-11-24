@@ -12,27 +12,12 @@ console.log('Migrating database content for new stationery site structure...');
 
 try {
   // 1. Update Pages
-  // about-teacher -> about-coop (關於合作社)
-  // about-ftmo -> about-manufacturing (關於三星製造)
-  // about-us -> about-us (關於我們) - Title update
-  
   const updatePage = db.prepare('UPDATE pages SET slug = ?, title = ? WHERE slug = ?');
-  const updatePageTitle = db.prepare('UPDATE pages SET title = ? WHERE slug = ?');
-  
-  // Try to update 'about-teacher' to 'about-coop'
-  // If 'about-teacher' doesn't exist (e.g. already changed), this does nothing.
-  updatePage.run('about-coop', '關於合作社', 'about-teacher');
-  
-  // If 'about-coop' didn't exist before but 'about-teacher' did, it's renamed.
-  // If it already existed (unlikely in fresh DB unless run twice), we ensure title is correct.
-  updatePageTitle.run('關於合作社', 'about-coop');
-
-  // about-ftmo -> about-manufacturing
-  updatePage.run('about-manufacturing', '關於三星製造', 'about-ftmo');
-  updatePageTitle.run('關於三星製造', 'about-manufacturing');
-
-  // about-us title
-  updatePageTitle.run('關於我們', 'about-us');
+  updatePage.run('about-music', '關於音樂課程', 'about-teacher');
+  updatePage.run('about-guchau', '關於鼓潮', 'about-us');
+  db.prepare("DELETE FROM pages WHERE slug IN ('about-ftmo','about-manufacturing','about-coop')").run();
+  db.prepare("INSERT OR IGNORE INTO pages (slug, title, content_html, is_published) VALUES ('about-guchau','關於鼓潮','',1)").run();
+  db.prepare("INSERT OR IGNORE INTO pages (slug, title, content_html, is_published) VALUES ('about-music','關於音樂課程','',1)").run();
 
   // 2. Update Menus
   // We'll delete existing menus and re-seed them to ensure clean structure match.
@@ -44,9 +29,8 @@ try {
   const info = insertMenu.run('關於', null, null, 10, null);
   const parentId = info.lastInsertRowid;
   
-  insertMenu.run('關於我們', 'about-us', null, 1, parentId);
-  insertMenu.run('關於合作社', 'about-coop', null, 2, parentId);
-  insertMenu.run('關於三星製造', 'about-manufacturing', null, 3, parentId);
+  insertMenu.run('關於鼓潮', 'about-guchau', '/about-guchau.html', 1, parentId);
+  insertMenu.run('關於音樂課程', 'about-music', '/about-music.html', 2, parentId);
   
   insertMenu.run('部落格', 'blog', null, 20, null);
   insertMenu.run('最新消息', 'news', null, 30, null);

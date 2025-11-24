@@ -193,7 +193,6 @@ CREATE INDEX IF NOT EXISTS idx_course_materials_media ON course_materials(media_
 -- 預設關於頁
 INSERT OR IGNORE INTO pages(slug, title, content_html, background_image_id, is_published)
 VALUES
- ('about-teacher','關於院長','',NULL,1),
- ('about-us','關於我們','',NULL,1),
- ('about-ftmo','關於 FTMO','',NULL,1);
+ ('about-guchau','關於鼓潮','',NULL,1),
+ ('about-music','關於音樂課程','',NULL,1);
 

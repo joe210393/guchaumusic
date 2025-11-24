@@ -135,15 +135,15 @@
     // Language switch
     const dict = {
       zh: {
-        home: '首頁', about: '關於鼓潮', about_teacher: '關於音樂', about_us: '關於藝文場地', about_fund: '關於基金帳戶',
+        home: '首頁', about: '關於', about_guchau: '關於鼓潮', about_music: '關於音樂課程', about_fund: '關於基金帳戶',
         blog: '部落格', news: '最新消息', leaderboard: '師資說明', plans: '課程方案', contact: '聯絡我們', trial: '課程試讀', login: '登入'
       },
       en: {
-        home: 'Home', about: 'About Guchau', about_teacher: 'About Music', about_us: 'About Art Space', about_fund: 'About Funded Account',
+        home: 'Home', about: 'About', about_guchau: 'About Guchau', about_music: 'About Music Courses', about_fund: 'About Funded Account',
         blog: 'Blog', news: 'News', leaderboard: 'Instructors', plans: 'Plans', contact: 'Contact', trial: 'Trial', login: 'Login'
       },
       ja: {
-        home: 'ホーム', about: 'Guchau', about_teacher: '音楽教室', about_us: '文化スペース', about_fund: 'ファンド口座について',
+        home: 'ホーム', about: '紹介', about_guchau: '鼓潮について', about_music: '音楽コースについて', about_fund: 'ファンド口座について',
         blog: 'ブログ', news: 'ニュース', leaderboard: '講師紹介', plans: 'プラン', contact: 'お問い合わせ', trial: '体験講座', login: 'ログイン'
       }
     };
@@ -567,24 +567,18 @@
         if (res.ok) form.reset();
       });
       applyBackgroundFromSettings('contact', settings);
-    } else if (page === 'about-teacher') {
+    } else if (page === 'about-music') {
       try {
-        const pageData = await fetchJson('/api/public/pages/about-teacher');
+        const pageData = await fetchJson('/api/public/pages/about-music');
         const img = q('#teacher-photo');
         if (img && pageData.background_image_url) img.src = pageData.background_image_url;
         const cont = q('#teacher-content'); if (cont) cont.innerHTML = pageData.content_html || '';
         setBackground(pageData.background_image_url || null, settings.default_bg_color);
       } catch { applyBackgroundFromSettings('about', settings); }
-    } else if (page === 'about-us') {
+    } else if (page === 'about-guchau') {
       try {
-        const pageData = await fetchJson('/api/public/pages/about-us');
+        const pageData = await fetchJson('/api/public/pages/about-guchau');
         const cont = q('#aboutus-content'); if (cont) cont.innerHTML = pageData.content_html || '';
-        setBackground(pageData.background_image_url || null, settings.default_bg_color);
-      } catch { applyBackgroundFromSettings('about', settings); }
-    } else if (page === 'about-ftmo') {
-      try {
-        const pageData = await fetchJson('/api/public/pages/about-ftmo');
-        const cont = q('#ftmo-content'); if (cont) cont.innerHTML = pageData.content_html || '';
         setBackground(pageData.background_image_url || null, settings.default_bg_color);
       } catch { applyBackgroundFromSettings('about', settings); }
     }

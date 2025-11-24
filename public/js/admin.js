@@ -1157,12 +1157,14 @@
     }
     try {
       const data = await api('GET', '/api/admin/about');
-      if (data?.aboutus) document.getElementById('aboutus-editor').innerHTML = data.aboutus.content_html || '';
-      if (data?.teacher) document.getElementById('coop-editor').innerHTML = data.teacher.content_html || '';
-      if (data?.ftmo) document.getElementById('mfg-editor').innerHTML = data.ftmo.content_html || '';
-      if (data?.aboutus) document.getElementById('aboutus-bg').value = data.aboutus.background_image_id || '';
-      if (data?.teacher) document.getElementById('coop-bg').value = data.teacher.background_image_id || '';
-      if (data?.ftmo) document.getElementById('mfg-bg').value = data.ftmo.background_image_id || '';
+      if (data?.guchau) {
+        document.getElementById('aboutus-editor').innerHTML = data.guchau.content_html || '';
+        document.getElementById('aboutus-bg').value = data.guchau.background_image_id || '';
+      }
+      if (data?.music) {
+        document.getElementById('coop-editor').innerHTML = data.music.content_html || '';
+        document.getElementById('coop-bg').value = data.music.background_image_id || '';
+      }
     } catch {}
 
     async function uploadAndInsert(file, editorEl) {
@@ -1175,18 +1177,14 @@
 
     const aToolbar = document.querySelector('#aboutus-editor')?.previousElementSibling;
     const cToolbar = document.querySelector('#coop-editor')?.previousElementSibling;
-    const mToolbar = document.querySelector('#mfg-editor')?.previousElementSibling;
-    aToolbar && bindToolbar(aToolbar); cToolbar && bindToolbar(cToolbar); mToolbar && bindToolbar(mToolbar);
+    aToolbar && bindToolbar(aToolbar); cToolbar && bindToolbar(cToolbar);
 
     document.getElementById('aboutus-insert-img')?.addEventListener('click', () => document.getElementById('aboutus-file').click());
     document.getElementById('coop-insert-img')?.addEventListener('click', () => document.getElementById('coop-file').click());
-    document.getElementById('mfg-insert-img')?.addEventListener('click', () => document.getElementById('mfg-file').click());
     document.getElementById('aboutus-file')?.addEventListener('change', (e) => e.target.files[0] && uploadAndInsert(e.target.files[0], document.getElementById('aboutus-editor')));
     document.getElementById('coop-file')?.addEventListener('change', (e) => e.target.files[0] && uploadAndInsert(e.target.files[0], document.getElementById('coop-editor')));
-    document.getElementById('mfg-file')?.addEventListener('change', (e) => e.target.files[0] && uploadAndInsert(e.target.files[0], document.getElementById('mfg-editor')));
 
-    // BG pickers (simple modal-less picker using the settings picker style)
-    // Picker like settings
+    // BG pickers
     const picker = document.getElementById('about-picker');
     const pickerGrid = document.getElementById('about-picker-grid');
     const pickerPager = document.getElementById('about-picker-pager');
@@ -1214,7 +1212,6 @@
     function pickBg(targetInputId){ pickerTarget = targetInputId; picker.style.display='block'; loadAboutMedia(1); }
     document.getElementById('aboutus-bg-pick')?.addEventListener('click', () => pickBg('aboutus-bg'));
     document.getElementById('coop-bg-pick')?.addEventListener('click', () => pickBg('coop-bg'));
-    document.getElementById('mfg-bg-pick')?.addEventListener('click', () => pickBg('mfg-bg'));
 
     async function uploadBg(file, targetInputId) {
       const csrf = await getCsrf();
@@ -1225,22 +1222,16 @@
     }
     document.getElementById('aboutus-bg-upload')?.addEventListener('click', () => document.getElementById('aboutus-bg-file').click());
     document.getElementById('coop-bg-upload')?.addEventListener('click', () => document.getElementById('coop-bg-file').click());
-    document.getElementById('mfg-bg-upload')?.addEventListener('click', () => document.getElementById('mfg-bg-file').click());
     document.getElementById('aboutus-bg-file')?.addEventListener('change', (e) => e.target.files[0] && uploadBg(e.target.files[0], 'aboutus-bg'));
     document.getElementById('coop-bg-file')?.addEventListener('change', (e) => e.target.files[0] && uploadBg(e.target.files[0], 'coop-bg'));
-    document.getElementById('mfg-bg-file')?.addEventListener('change', (e) => e.target.files[0] && uploadBg(e.target.files[0], 'mfg-bg'));
 
     document.getElementById('aboutus-save')?.addEventListener('click', async () => {
-      await api('POST', '/api/admin/pages', { slug: 'about-us', title: '關於藝文場地', content_html: document.getElementById('aboutus-editor').innerHTML, background_image_id: document.getElementById('aboutus-bg').value || null, is_published: 1 });
-      alert('已儲存：關於藝文場地');
+      await api('POST', '/api/admin/pages', { slug: 'about-guchau', title: '關於鼓潮', content_html: document.getElementById('aboutus-editor').innerHTML, background_image_id: document.getElementById('aboutus-bg').value || null, is_published: 1 });
+      alert('已儲存：關於鼓潮');
     });
     document.getElementById('coop-save')?.addEventListener('click', async () => {
-      await api('POST', '/api/admin/pages', { slug: 'about-coop', title: '關於音樂', content_html: document.getElementById('coop-editor').innerHTML, background_image_id: document.getElementById('coop-bg').value || null, is_published: 1 });
-      alert('已儲存：關於音樂');
-    });
-    document.getElementById('mfg-save')?.addEventListener('click', async () => {
-      await api('POST', '/api/admin/pages', { slug: 'about-manufacturing', title: '關於三星製造', content_html: document.getElementById('mfg-editor').innerHTML, background_image_id: document.getElementById('mfg-bg').value || null, is_published: 1 });
-      alert('已儲存：關於三星製造');
+      await api('POST', '/api/admin/pages', { slug: 'about-music', title: '關於音樂課程', content_html: document.getElementById('coop-editor').innerHTML, background_image_id: document.getElementById('coop-bg').value || null, is_published: 1 });
+      alert('已儲存：關於音樂課程');
     });
   }
 })();

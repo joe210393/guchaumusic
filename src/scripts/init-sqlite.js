@@ -103,14 +103,10 @@ try {
   console.log('Checking for content migration needs...');
   
   // Update Pages
-  const updatePage = db.prepare('UPDATE pages SET slug = ?, title = ? WHERE slug = ?');
-  const updatePageTitle = db.prepare('UPDATE pages SET title = ? WHERE slug = ?');
-  
-  updatePage.run('about-coop', '關於合作社', 'about-teacher');
-  updatePageTitle.run('關於合作社', 'about-coop');
-  updatePage.run('about-manufacturing', '關於三星製造', 'about-ftmo');
-  updatePageTitle.run('關於三星製造', 'about-manufacturing');
-  updatePageTitle.run('關於我們', 'about-us');
+  const renamePage = db.prepare('UPDATE pages SET slug = ?, title = ? WHERE slug = ?');
+  renamePage.run('about-music', '關於音樂課程', 'about-teacher');
+  renamePage.run('about-guchau', '關於鼓潮', 'about-us');
+  db.prepare("DELETE FROM pages WHERE slug = 'about-ftmo' OR slug = 'about-manufacturing'").run();
 
   // Reset Menus if they look like the old default (simple heuristic or just always update on init?)
   // To be safe, we'll just ensure the new menu items exist or replace. 
@@ -125,9 +121,8 @@ try {
       const info = insertMenu.run('關於', null, null, 10, null);
       const parentId = info.lastInsertRowid;
       
-      insertMenu.run('關於我們', 'about-us', null, 1, parentId);
-      insertMenu.run('關於合作社', 'about-coop', null, 2, parentId);
-      insertMenu.run('關於三星製造', 'about-manufacturing', null, 3, parentId);
+      insertMenu.run('關於鼓潮', 'about-guchau', '/about-guchau.html', 1, parentId);
+      insertMenu.run('關於音樂課程', 'about-music', '/about-music.html', 2, parentId);
       
       insertMenu.run('部落格', 'blog', null, 20, null);
       insertMenu.run('最新消息', 'news', null, 30, null);

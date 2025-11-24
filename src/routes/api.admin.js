@@ -170,12 +170,11 @@ apiAdminRouter.put('/pages/:id', requireAuth, async (req, res) => {
   res.json({ ok: true });
 });
 
-// 關於頁（講師／我們／基金帳戶）讀取與儲存
+// 關於頁（關於鼓潮／關於音樂課程）讀取與儲存
 apiAdminRouter.get('/about', requireAuth, async (_req, res) => {
-  const coop = await query('SELECT content_html, background_image_id FROM pages WHERE slug = ? LIMIT 1', ['about-coop']);
-  const aboutus = await query('SELECT content_html, background_image_id FROM pages WHERE slug = ? LIMIT 1', ['about-us']);
-  const mfg = await query('SELECT content_html, background_image_id FROM pages WHERE slug = ? LIMIT 1', ['about-manufacturing']);
-  res.json({ teacher: coop[0] || null, aboutus: aboutus[0] || null, ftmo: mfg[0] || null });
+  const guchau = await query('SELECT content_html, background_image_id FROM pages WHERE slug = ? LIMIT 1', ['about-guchau']);
+  const music = await query('SELECT content_html, background_image_id FROM pages WHERE slug = ? LIMIT 1', ['about-music']);
+  res.json({ guchau: guchau[0] || null, music: music[0] || null });
 });
 apiAdminRouter.delete('/pages/:id', requireEditorOrAdmin, async (req, res) => {
   await query('DELETE FROM pages WHERE id = ?', [req.params.id]);
