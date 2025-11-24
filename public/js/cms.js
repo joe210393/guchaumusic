@@ -135,15 +135,15 @@
     // Language switch
     const dict = {
       zh: {
-        home: '首頁', about: '關於', about_teacher: '關於院長', about_us: '關於我們', about_fund: '關於基金帳戶',
+        home: '首頁', about: '鼓潮', about_teacher: '音樂教室', about_us: '文化場域', about_fund: '關於基金帳戶',
         blog: '部落格', news: '最新消息', leaderboard: '師資說明', plans: '課程方案', contact: '聯絡我們', trial: '課程試讀', login: '登入'
       },
       en: {
-        home: 'Home', about: 'About', about_teacher: 'About Teacher', about_us: 'About Us', about_fund: 'About Funded Account',
+        home: 'Home', about: 'Guchau', about_teacher: 'Music Class', about_us: 'Cultural Space', about_fund: 'About Funded Account',
         blog: 'Blog', news: 'News', leaderboard: 'Instructors', plans: 'Plans', contact: 'Contact', trial: 'Trial', login: 'Login'
       },
       ja: {
-        home: 'ホーム', about: '概要', about_teacher: '講師について', about_us: '私たちについて', about_fund: 'ファンド口座について',
+        home: 'ホーム', about: 'Guchau', about_teacher: '音楽教室', about_us: '文化スペース', about_fund: 'ファンド口座について',
         blog: 'ブログ', news: 'ニュース', leaderboard: '講師紹介', plans: 'プラン', contact: 'お問い合わせ', trial: '体験講座', login: 'ログイン'
       }
     };
