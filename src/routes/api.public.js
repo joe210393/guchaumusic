@@ -213,10 +213,15 @@ apiPublicRouter.get('/debug-paths', async (_req, res) => {
   const uploadDir = path.join(process.cwd(), 'public', 'uploads');
   const privateDir = path.join(process.cwd(), 'private_member_uploads');
   
-  // Also check Zeabur data path
+  // Also check Zeabur paths
   const zeaburData = '/app/data';
+  const zeaburUploads = '/app/public/uploads';
+
   let zeaburDataFiles = [];
   try { zeaburDataFiles = fs.readdirSync(zeaburData); } catch(e) { zeaburDataFiles = [String(e)]; }
+
+  let zeaburUploadsFiles = [];
+  try { zeaburUploadsFiles = fs.readdirSync(zeaburUploads); } catch(e) { zeaburUploadsFiles = [String(e)]; }
 
   let uploadsFiles = [];
   let privateFiles = [];
@@ -226,9 +231,10 @@ apiPublicRouter.get('/debug-paths', async (_req, res) => {
   res.json({
     cwd: process.cwd(),
     uploadDir,
-    privateDir,
+    zeaburUploads,
     zeaburData,
     zeaburDataFiles_sample: zeaburDataFiles,
+    zeaburUploadsFiles_sample: zeaburUploadsFiles,
     uploads_content_sample: uploadsFiles.slice(0, 20),
     private_content_sample: privateFiles.slice(0, 20)
   });

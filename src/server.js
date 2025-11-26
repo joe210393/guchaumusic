@@ -140,13 +140,24 @@ function startServer() {
 
     // 靜態檔案目錄
     const publicDir = path.join(__dirname, '..', 'public');
-    const uploadsDir = path.join(publicDir, 'uploads');
+    // Detect Zeabur persistent uploads directory
+    let uploadsDir = path.join(publicDir, 'uploads');
+    if (fs.existsSync('/app/public/uploads')) {
+        uploadsDir = '/app/public/uploads';
+        console.log('Using Zeabur persistent uploads directory:', uploadsDir);
+    }
+
     const privateMemberDir = path.join(__dirname, '..', 'private_member_uploads');
     const logsDir = path.join(__dirname, '..', 'logs');
+    
+    // Ensure directories exist
     try { fs.mkdirSync(uploadsDir, { recursive: true }); } catch {}
     try { fs.mkdirSync(privateMemberDir, { recursive: true }); } catch {}
     try { fs.mkdirSync(logsDir, { recursive: true }); } catch {}
+    
     app.use(express.static(publicDir, { extensions: ['html'] }));
+    // Explicitly serve uploads from the determined directory (in case it's outside publicDir)
+    app.use('/uploads', express.static(uploadsDir));
 
     // 前台 API（附帶 CSRF 防護）
     // Apply targeted rate limits on specific subpaths first

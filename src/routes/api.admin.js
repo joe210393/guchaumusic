@@ -12,7 +12,12 @@ import sanitizeHtml from 'sanitize-html';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const logsDir = path.join(__dirname, '..', '..', 'logs');
-const uploadDir = path.join(__dirname, '..', '..', 'public', 'uploads');
+
+// Determine Upload Directory (Prioritize Zeabur persistent volume)
+let uploadDir = path.join(__dirname, '..', '..', 'public', 'uploads');
+if (fs.existsSync('/app/public/uploads')) {
+    uploadDir = '/app/public/uploads';
+}
 
 const storage = multer.diskStorage({
   destination: (_req, _file, cb) => cb(null, uploadDir),
