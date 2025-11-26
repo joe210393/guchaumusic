@@ -6,11 +6,29 @@ import fs from 'fs';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Use environment variable for DB path or default to 'data/com1.db' relative to project root
-// If running in container, standard is often /app/data/com1.db
+// 1. Priority: Environment Variable
+// 2. Second Priority: Zeabur Default Persistent Path (/app/data)
+// 3. Fallback: Local project data folder
 const projectRoot = path.join(__dirname, '../../');
-// Allow overriding via env var, default to project_root/data/com1.db
-const dbPath = process.env.DB_PATH || path.join(projectRoot, 'data/com1.db');
+let targetDbPath = process.env.DB_PATH;
+
+if (!targetDbPath) {
+    // Check if we are likely in Zeabur (by checking /app/data existence)
+    const zeaburDataPath = '/app/data';
+    try {
+        if (fs.existsSync(zeaburDataPath)) {
+            targetDbPath = path.join(zeaburDataPath, 'com1.db');
+            console.log('Detected Zeabur environment, using persistent path:', targetDbPath);
+        }
+    } catch (e) {}
+}
+
+// If still not set, use local default
+if (!targetDbPath) {
+    targetDbPath = path.join(projectRoot, 'data/com1.db');
+}
+
+const dbPath = targetDbPath;
 
 // Ensure directory exists
 const dbDir = path.dirname(dbPath);

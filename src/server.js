@@ -17,7 +17,22 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Check DB status on startup and init if missing
-const dbPath = process.env.DB_PATH || path.join(__dirname, '../data/com1.db');
+// Logic duplicated from db.js to ensure consistent path resolution
+let dbPath = process.env.DB_PATH;
+if (!dbPath) {
+    const zeaburDataPath = '/app/data';
+    try {
+        if (fs.existsSync(zeaburDataPath)) {
+            dbPath = path.join(zeaburDataPath, 'com1.db');
+        }
+    } catch (e) {}
+}
+if (!dbPath) {
+    dbPath = path.join(__dirname, '../data/com1.db');
+}
+// Pass the resolved DB path to init script via env var to ensure it uses the same one
+process.env.DB_PATH = dbPath;
+
 const initScript = path.join(__dirname, 'scripts/init-sqlite.js');
 
 console.log(`Server Starting...`);
