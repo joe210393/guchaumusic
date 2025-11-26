@@ -199,7 +199,31 @@ apiPublicRouter.post('/contact', async (req, res) => {
   if (!cleanName || !cleanEmail || !cleanMessage) return res.status(400).json({ error: 'Missing required fields' });
   await query('INSERT INTO contacts(name, email, phone, message, created_at) VALUES (?,?,?,?, NOW())', [cleanName, cleanEmail, cleanPhone, cleanMessage]);
   try { await sendContactMail({ name: cleanName, email: cleanEmail, phone: cleanPhone, message: cleanMessage }); } catch {}
+  
+  // Log contact
+  try { 
+    const logEntry = `[${new Date().toISOString()}] Contact: ${cleanName} (${cleanEmail}) - ${cleanPhone}\n`;
+    fs.appendFileSync(path.join(logsDir, 'contact.log'), logEntry); 
+  } catch {}
+
   res.json({ ok: true });
+});
+
+apiPublicRouter.get('/debug-paths', async (_req, res) => {
+  const uploadDir = path.join(process.cwd(), 'public', 'uploads');
+  const privateDir = path.join(process.cwd(), 'private_member_uploads');
+  let uploadsFiles = [];
+  let privateFiles = [];
+  try { uploadsFiles = fs.readdirSync(uploadDir); } catch(e) { uploadsFiles = [String(e)]; }
+  try { privateFiles = fs.readdirSync(privateDir); } catch(e) { privateFiles = [String(e)]; }
+  
+  res.json({
+    cwd: process.cwd(),
+    uploadDir,
+    privateDir,
+    uploads_content_sample: uploadsFiles.slice(0, 20),
+    private_content_sample: privateFiles.slice(0, 20)
+  });
 });
 
 // 會員註冊與登入（公開）
