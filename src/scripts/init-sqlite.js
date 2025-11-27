@@ -59,6 +59,13 @@ if (!fs.existsSync(dbPath)) {
             if (!fs.existsSync(dbDir)) fs.mkdirSync(dbDir, { recursive: true });
             
             fs.copyFileSync(seedPath, dbPath);
+            
+            // Also copy WAL/SHM files if they exist in seed
+            const walPath = seedPath + '-wal';
+            const shmPath = seedPath + '-shm';
+            if (fs.existsSync(walPath)) fs.copyFileSync(walPath, dbPath + '-wal');
+            if (fs.existsSync(shmPath)) fs.copyFileSync(shmPath, dbPath + '-shm');
+
             console.log('Database seeded successfully from local backup.');
         } catch (e) {
             console.error('Failed to seed database:', e);
