@@ -36,6 +36,7 @@ process.env.DB_PATH = dbPath;
 const initScript = path.join(__dirname, 'scripts/init-sqlite.js');
 
 console.log(`Server Starting...`);
+console.log(`Zeabur Deployment: Persistent Storage Check Active`);
 console.log(`Target DB Path: ${dbPath}`);
 console.log(`DB Exists? ${fs.existsSync(dbPath)}`);
 
