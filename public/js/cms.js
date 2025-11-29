@@ -392,46 +392,63 @@
 
             console.log('[Frontend] Rendering', data.items.length, 'media records');
             data.items.forEach((item, idx) => {
-                console.log(`[Frontend] Item ${idx}:`, item.title, 'is_published check passed');
-                const node = document.importNode(tpl.content, true);
-                const embedHtml = getEmbed(item.embed_url);
-                
-                // Process all data-prop attributes
-                qa('[data-prop]', node).forEach(el => {
-                    const propValue = el.getAttribute('data-prop');
-                    const [attr, path] = propValue.split(':');
-                    let value;
-                    if (path === 'title') value = item.title;
-                    else if (path === 'excerpt') value = item.excerpt;
-                    else if (path === 'link') value = `/media-record-post.html?slug=${encodeURIComponent(item.slug)}`;
-                    else if (path === 'embed') {
-                        if (attr === 'html') { el.innerHTML = embedHtml; return; }
+                try {
+                    console.log(`[Frontend] Item ${idx}:`, item);
+                    const node = document.importNode(tpl.content, true);
+                    const embedHtml = getEmbed(item.embed_url);
+                    
+                    // Process all data-prop attributes
+                    qa('[data-prop]', node).forEach(el => {
+                        try {
+                            const propValue = el.getAttribute('data-prop');
+                            if (!propValue) return;
+                            const [attr, path] = propValue.split(':');
+                            let value;
+                            if (path === 'title') value = item.title;
+                            else if (path === 'excerpt') value = item.excerpt;
+                            else if (path === 'link') value = `/media-record-post.html?slug=${encodeURIComponent(item.slug)}`;
+                            else if (path === 'embed') {
+                                if (attr === 'html') { el.innerHTML = embedHtml; return; }
+                            }
+                            
+                            // Apply the value based on attribute type
+                            if (attr === 'text') {
+                                el.textContent = value || '';
+                            } else if (attr === 'href') {
+                                el.setAttribute('href', value || '#');
+                            } else {
+                                el.setAttribute(attr, value || '');
+                            }
+                        } catch (err) {
+                            console.error(`[Frontend] Error processing data-prop for item ${idx}:`, err);
+                        }
+                    });
+                    
+                    // Special handling for title link: set href and ensure title span has text
+                    const titleLink = node.querySelector('h3 a');
+                    const titleSpan = node.querySelector('h3 a span');
+                    if (titleLink) {
+                        titleLink.href = `/media-record-post.html?slug=${encodeURIComponent(item.slug)}`;
+                    }
+                    if (titleSpan) {
+                        titleSpan.textContent = item.title || '';
+                    } else if (titleLink) {
+                        // Fallback: if no span, set text directly on link
+                        titleLink.textContent = item.title || '';
                     }
                     
-                    // Apply the value based on attribute type
-                    if (attr === 'text') {
-                        el.textContent = value || '';
-                    } else if (attr === 'href') {
-                        el.setAttribute('href', value || '#');
-                    } else {
-                        el.setAttribute(attr, value || '');
+                    if (!embedHtml) {
+                        // If no embed, maybe show cover image?
+                        // For now just hide embed container if empty
+                        const container = node.querySelector('.media-embed-container');
+                        if (container && !embedHtml) container.style.display = 'none';
                     }
-                });
-                
-                // Special handling for title link: set both href and text
-                const titleLink = node.querySelector('h3 a');
-                if (titleLink) {
-                    titleLink.href = `/media-record-post.html?slug=${encodeURIComponent(item.slug)}`;
-                    titleLink.textContent = item.title || '';
+                    
+                    gridWrap.appendChild(node);
+                    console.log(`[Frontend] Successfully appended item ${idx} to grid`);
+                } catch (err) {
+                    console.error(`[Frontend] Error rendering item ${idx}:`, err, item);
                 }
-                
-                if (!embedHtml) {
-                    // If no embed, maybe show cover image?
-                    // For now just hide embed container if empty
-                    const container = node.querySelector('.media-embed-container');
-                    if (container && !embedHtml) container.style.display = 'none';
-                }
-                gridWrap.appendChild(node);
             });
             
             // Pager
