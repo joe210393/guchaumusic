@@ -3,15 +3,38 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
   <title>關於音樂課程</title>
   <link rel="stylesheet" href="/css/site.css">
   <script defer src="/js/cms.js"></script>
+  <style>
+    #teacher-content {
+      line-height: 1.8;
+      color: #374151;
+    }
+    #teacher-content img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 8px;
+      margin: 16px 0;
+    }
+    #teacher-content p {
+      margin-bottom: 16px;
+    }
+    #teacher-content h2, #teacher-content h3 {
+      margin-top: 24px;
+      margin-bottom: 16px;
+      color: #111827;
+    }
+  </style>
 </head>
 <body data-page="about-music">
   <header id="site-header" class="site-header"></header>
-  <main class="container section-white section-pad">
+  <main class="container">
     <h1 class="mb-4">關於音樂課程</h1>
-    <article id="teacher-content" style="max-width: 100%;"></article>
+    <div class="card">
+      <article id="teacher-content"></article>
+    </div>
   </main>
   <a id="line-float" class="line-float" target="_blank" rel="noopener">LINE</a>
   <footer class="site-footer" id="site-footer"></footer>

@@ -3,6 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
   <title>聯絡我們</title>
   <link rel="stylesheet" href="/css/site.css">
   <script defer src="/js/cms.js"></script>
@@ -10,17 +11,20 @@
 <body data-page="contact">
   <header id="site-header" class="site-header"></header>
   <main class="container">
-    <h1>聯絡我們</h1>
-    <form id="contact-form">
-      <div><label>姓名</label><input name="name" required></div>
-      <div><label>Email</label><input name="email" type="email" required></div>
-      <div><label>Phone</label><input name="phone"></div>
-      <div><label>訊息</label><textarea name="message" rows="5" required></textarea></div>
-      <button type="submit">送出</button>
-      <div id="contact-msg"></div>
-    </form>
+    <h1 class="mb-4">聯絡我們</h1>
+    <div class="card">
+      <form id="contact-form">
+        <div><label>姓名</label><input name="name" required></div>
+        <div><label>Email</label><input name="email" type="email" required></div>
+        <div><label>Phone</label><input name="phone"></div>
+        <div><label>訊息</label><textarea name="message" rows="5" required></textarea></div>
+        <button type="submit">送出</button>
+        <div id="contact-msg"></div>
+      </form>
+    </div>
   </main>
   <a id="line-float" class="line-float" target="_blank" rel="noopener">LINE</a>
+  <footer class="site-footer" id="site-footer"></footer>
 </body>
 </html>
 

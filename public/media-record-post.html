@@ -7,13 +7,39 @@
   <title id="media-title">影像紀錄</title>
   <link rel="stylesheet" href="/css/site.css">
   <script defer src="/js/cms.js"></script>
+  <style>
+    .media-embed-large {
+      margin-bottom: 24px;
+    }
+    .media-embed-large .video-wrapper {
+      margin-bottom: 0;
+    }
+    #post-content {
+      line-height: 1.8;
+      color: #374151;
+    }
+    #post-content img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 8px;
+      margin: 16px 0;
+    }
+    #post-content p {
+      margin-bottom: 16px;
+    }
+    #post-content h2, #post-content h3 {
+      margin-top: 24px;
+      margin-bottom: 16px;
+      color: #111827;
+    }
+  </style>
 </head>
 <body data-page="media-record-post">
   <header id="site-header" class="site-header"></header>
   <main class="container">
     <h1 id="post-title" class="mb-4"></h1>
     <div class="card">
-      <div id="post-embed" class="media-embed-large mb-4"></div>
+      <div id="post-embed" class="media-embed-large"></div>
       <article id="post-content"></article>
     </div>
   </main>

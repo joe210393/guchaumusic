@@ -3,17 +3,41 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
   <title>最新消息</title>
   <link rel="stylesheet" href="/css/site.css">
   <script defer src="/js/cms.js"></script>
+  <style>
+    #news-content {
+      line-height: 1.8;
+      color: #374151;
+    }
+    #news-content img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 8px;
+      margin: 16px 0;
+    }
+    #news-content p {
+      margin-bottom: 16px;
+    }
+    #news-content h2, #news-content h3 {
+      margin-top: 24px;
+      margin-bottom: 16px;
+      color: #111827;
+    }
+  </style>
 </head>
 <body data-page="news-post">
   <header id="site-header" class="site-header"></header>
   <main class="container">
-    <h1 id="news-title"></h1>
-    <article id="news-content"></article>
+    <h1 id="news-title" class="mb-4"></h1>
+    <div class="card">
+      <article id="news-content"></article>
+    </div>
   </main>
   <a id="line-float" class="line-float" target="_blank" rel="noopener">LINE</a>
+  <footer class="site-footer" id="site-footer"></footer>
 </body>
 </html>
 
