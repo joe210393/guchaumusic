@@ -235,6 +235,7 @@ try {
   // Others
   insertMenu.run('相關報導', 'news', '/news.html', 30, null);
   insertMenu.run('影像紀錄', 'media-records', '/media-records.html', 40, null);
+  insertMenu.run('預約報名', 'booking', '/booking.html', 45, null);
   insertMenu.run('聯絡我們', 'contact', '/contact.html', 50, null);
 
   // Check for product_categories and products tables
