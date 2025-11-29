@@ -1506,20 +1506,26 @@
       }
     }
     
-    document.getElementById('product-cover-pick')?.addEventListener('click', () => {
+    document.getElementById('product-cover-pick')?.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
       pickerMode = 'cover';
       picker.style.display = 'flex';
       loadMediaForPicker(1);
     });
     
-    document.getElementById('product-images-pick')?.addEventListener('click', () => {
+    document.getElementById('product-images-pick')?.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
       pickerMode = 'images';
       picker.style.display = 'flex';
       loadMediaForPicker(1);
     });
     
     // Upload handlers
-    document.getElementById('product-cover-upload')?.addEventListener('click', () => {
+    document.getElementById('product-cover-upload')?.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
       document.getElementById('product-cover-file')?.click();
     });
     
@@ -1535,7 +1541,9 @@
       }
     });
     
-    document.getElementById('product-images-upload')?.addEventListener('click', () => {
+    document.getElementById('product-images-upload')?.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
       document.getElementById('product-images-file')?.click();
     });
     
@@ -1578,14 +1586,18 @@
     });
     
     // Insert image from media picker
-    document.getElementById('product-desc-insert-img')?.addEventListener('click', () => {
+    document.getElementById('product-desc-insert-img')?.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
       pickerMode = 'description';
       picker.style.display = 'flex';
       loadMediaForPicker(1);
     });
     
     // Upload image for description
-    document.getElementById('product-desc-upload-img')?.addEventListener('click', () => {
+    document.getElementById('product-desc-upload-img')?.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
       document.getElementById('product-desc-upload-file')?.click();
     });
     
@@ -1601,8 +1613,16 @@
         img.src = j.file_path;
         img.alt = '';
         img.style.maxWidth = '100%';
-        descEditor.appendChild(img);
+        if (descEditor) {
+          descEditor.appendChild(img);
+        }
       }
+    });
+    
+    // Close picker button
+    document.getElementById('product-picker-close')?.addEventListener('click', (e) => {
+      e.preventDefault();
+      picker.style.display = 'none';
     });
     
     if (prodForm) {

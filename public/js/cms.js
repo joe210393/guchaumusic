@@ -863,42 +863,52 @@
         try {
           const url = categoryId ? `/api/public/products?category_id=${categoryId}` : '/api/public/products';
           const products = await fetchJson(url);
+          console.log('[Frontend] Loaded products:', products);
           if (productsGrid && cardTpl) {
             productsGrid.innerHTML = '';
-            products.forEach(product => {
-              const node = document.importNode(cardTpl.content, true);
-              const card = node.querySelector('.product-card');
-              
-              // Set onclick to navigate to product detail
-              card.onclick = () => {
-                location.href = `/product-detail.html?slug=${encodeURIComponent(product.slug)}`;
-              };
-              
-              // Fill in data
-              qa('[data-prop]', node).forEach(el => {
-                const [attr, path] = el.getAttribute('data-prop').split(':');
-                let value = path.split('.').reduce((o, k) => (o ? o[k] : undefined), product);
+            if (products && products.length > 0) {
+              products.forEach(product => {
+                const node = document.importNode(cardTpl.content, true);
+                const card = node.querySelector('.product-card');
                 
-                if (path === 'price') {
-                  value = Number(value || 0).toLocaleString('zh-TW', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+                // Set onclick to navigate to product detail
+                if (card) {
+                  card.addEventListener('click', () => {
+                    location.href = `/product-detail.html?slug=${encodeURIComponent(product.slug)}`;
+                  });
                 }
                 
-                if (attr === 'text') {
-                  el.textContent = value ?? '';
-                } else if (attr === 'src') {
-                  el.src = value || '';
-                } else if (attr === 'onclick') {
-                  // Already handled above
-                } else {
-                  el.setAttribute(attr, value ?? '');
-                }
+                // Fill in data
+                qa('[data-prop]', node).forEach(el => {
+                  const [attr, path] = el.getAttribute('data-prop').split(':');
+                  let value = path.split('.').reduce((o, k) => (o ? o[k] : undefined), product);
+                  
+                  if (path === 'price') {
+                    value = Number(value || 0).toLocaleString('zh-TW', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+                  }
+                  
+                  if (attr === 'text') {
+                    el.textContent = value ?? '';
+                  } else if (attr === 'src') {
+                    el.src = value || '';
+                  } else if (attr === 'onclick') {
+                    // Already handled above with addEventListener
+                  } else {
+                    el.setAttribute(attr, value ?? '');
+                  }
+                });
+                
+                productsGrid.appendChild(node);
               });
-              
-              productsGrid.appendChild(node);
-            });
+            } else {
+              productsGrid.innerHTML = '<p style="text-align:center;color:#666;padding:40px;">目前沒有商品</p>';
+            }
           }
         } catch (err) {
           console.error('[Frontend] Error loading products:', err);
+          if (productsGrid) {
+            productsGrid.innerHTML = '<p style="text-align:center;color:#c00;padding:40px;">載入商品失敗，請稍後再試</p>';
+          }
         }
       }
       
