@@ -1235,11 +1235,24 @@
             `;
             
             if (isCurrentMonth && dayEvents.length > 0) {
+              dayEl.style.cursor = 'pointer';
               dayEl.addEventListener('click', () => showEventDetail(dateStr, dayEvents));
             }
             
             calendarEl.appendChild(dayEl);
             currentDate.setDate(currentDate.getDate() + 1);
+          }
+        }).catch(err => {
+          console.error('[Frontend] Failed to render calendar:', err);
+          // Show error message but keep calendar structure
+          if (calendarEl) {
+            const errorMsg = document.createElement('div');
+            errorMsg.style.gridColumn = '1/-1';
+            errorMsg.style.textAlign = 'center';
+            errorMsg.style.padding = '40px';
+            errorMsg.style.color = '#666';
+            errorMsg.textContent = '載入月曆時發生錯誤，請重新整理頁面';
+            calendarEl.appendChild(errorMsg);
           }
         });
         
