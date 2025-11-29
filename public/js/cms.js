@@ -407,30 +407,36 @@
                 if (!url) return '';
                 try {
                     const u = new URL(url);
-                    // YouTube handling only - simplified to avoid error 153
+                    // YouTube handling - support all YouTube URL formats
                     if (u.hostname.includes('youtube.com') || u.hostname.includes('youtu.be')) {
                         let vid = null;
                         // Handle different YouTube URL formats
                         if (u.hostname === 'youtu.be' || u.hostname.includes('youtu.be')) {
+                            // https://youtu.be/VIDEO_ID
                             vid = u.pathname.replace(/^\//, '').split('/')[0].split('?')[0];
                         } else if (u.pathname.includes('/embed/')) {
+                            // https://www.youtube.com/embed/VIDEO_ID?si=...
                             vid = u.pathname.split('/embed/')[1].split('?')[0];
                         } else if (u.pathname.includes('/v/')) {
+                            // https://www.youtube.com/v/VIDEO_ID
                             vid = u.pathname.split('/v/')[1].split('?')[0];
                         } else if (u.pathname.includes('/shorts/')) {
+                            // https://www.youtube.com/shorts/VIDEO_ID
                             vid = u.pathname.split('/shorts/')[1].split('?')[0];
                         } else {
+                            // https://www.youtube.com/watch?v=VIDEO_ID
                             vid = u.searchParams.get('v');
                         }
-                        // Clean video ID
+                        // Clean video ID (remove any extra parameters)
                         if (vid) {
-                            vid = vid.split('&')[0].split('#')[0].trim();
+                            vid = vid.split('&')[0].split('#')[0].split('?')[0].trim();
                             // Validate video ID format (YouTube video IDs are 11 characters)
                             if (vid && /^[a-zA-Z0-9_-]{11}$/.test(vid)) {
-                                // Simple embed URL without origin parameter to avoid error 153
-                                // Use standard youtube.com/embed format
+                                // Simple embed URL - removed origin parameter to avoid error 153
                                 const embedUrl = `https://www.youtube.com/embed/${vid}?rel=0&modestbranding=1`;
                                 return `<div class="video-wrapper" style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;max-width:100%;background:#000;border-radius:8px;margin-bottom:16px;"><iframe src="${embedUrl}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen style="position:absolute;top:0;left:0;width:100%;height:100%;" loading="lazy"></iframe></div>`;
+                            } else {
+                                console.warn('[Frontend] Invalid YouTube video ID format:', vid);
                             }
                         }
                     }

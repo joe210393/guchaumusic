@@ -69,10 +69,15 @@ function startServer() {
           useDefaults: true,
           directives: {
             defaultSrc: ["'self'"],
-            scriptSrc: ["'self'"],
+            scriptSrc: [
+              "'self'",
+              'https://www.youtube.com',
+              'https://www.youtube-nocookie.com',
+              'https://s.ytimg.com'
+            ],
             styleSrc: ["'self'", "'unsafe-inline'"],
-            imgSrc: ["'self'", 'data:', 'blob:'],
-            connectSrc: ["'self'"],
+            imgSrc: ["'self'", 'data:', 'blob:', 'https://i.ytimg.com', 'https://www.youtube.com'],
+            connectSrc: ["'self'", 'https://www.youtube.com', 'https://www.youtube-nocookie.com'],
             objectSrc: ["'none'"],
             baseUri: ["'self'"],
             formAction: ["'self'"],
