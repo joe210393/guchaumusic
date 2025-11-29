@@ -387,7 +387,13 @@
         form.querySelector('[name="embed_url"]').value=r.embed_url||'';
         editor.innerHTML=r.content_html||'';
         document.getElementById('mrecords-cover').value=r.cover_media_id||'';
-        document.getElementById('mrecords-published').value=r.published_at||'';
+        // Convert SQL datetime to datetime-local format if needed
+        if (r.published_at) {
+          const pubDate = r.published_at.replace(' ', 'T').slice(0, 16);
+          document.getElementById('mrecords-published').value = pubDate;
+        } else {
+          document.getElementById('mrecords-published').value = '';
+        }
         document.getElementById('mrecords-published-flag').checked=!!r.is_published;
         form.querySelector('[name="id"]').value=r.id;
       } else if (e.target.dataset.del){
@@ -395,11 +401,22 @@
       }
     });
     form.addEventListener('submit', async (e)=>{
-      e.preventDefault(); const fd=new FormData(form); const data=Object.fromEntries(fd.entries());
+      e.preventDefault(); 
+      const fd=new FormData(form); 
+      const data=Object.fromEntries(fd.entries());
       data.content_html=editor.innerHTML;
       data.cover_media_id=document.getElementById('mrecords-cover').value||null;
-      data.published_at=document.getElementById('mrecords-published').value||null;
-      data.is_published=document.getElementById('mrecords-published-flag').checked?1:0;
+      // Convert datetime-local to SQL format
+      const pubDateInput = document.getElementById('mrecords-published');
+      if (pubDateInput && pubDateInput.value) {
+        // datetime-local format: YYYY-MM-DDTHH:mm -> SQL format: YYYY-MM-DD HH:mm:ss
+        data.published_at = pubDateInput.value.replace('T', ' ') + ':00';
+      } else {
+        data.published_at = null;
+      }
+      // Explicitly set is_published from checkbox
+      const pubFlag = document.getElementById('mrecords-published-flag');
+      data.is_published = (pubFlag && pubFlag.checked) ? 1 : 0;
       const id=data.id; delete data.id;
       if (id) await api('PUT', `/api/admin/media-records/${id}`, data); else await api('POST', '/api/admin/media-records', data);
       location.reload();
@@ -600,8 +617,58 @@
     document.getElementById('news-cover-upload')?.addEventListener('click',()=> document.getElementById('news-cover-file').click());
     document.getElementById('news-cover-file')?.addEventListener('change', async (e)=>{ const f=e.target.files?.[0]; if (!f) return; const csrf=await getCsrf(); const fd=new FormData(); fd.append('file', f); const res=await fetch('/api/admin/media/upload',{method:'POST', headers:{'CSRF-Token': csrf}, body: fd, credentials:'same-origin'}); const j=await res.json(); if (j?.media_id) document.getElementById('news-cover').value=j.media_id; });
     // edit/delete/save
-    tbody.addEventListener('click', async (e)=>{ const id = e.target.dataset.edit || e.target.dataset.del; if (!id) return; if (e.target.dataset.edit){ const r=rows.find(x=> String(x.id)===String(id)); if (!r) return; document.getElementById('news-title').value=r.title||''; document.getElementById('news-slug').value=r.slug||''; document.getElementById('news-excerpt').value=r.excerpt||''; editor.innerHTML=r.content_html||''; document.getElementById('news-cover').value=r.cover_media_id||''; document.getElementById('news-published').value=r.published_at||''; document.getElementById('news-published-flag').checked=!!r.is_published; form.querySelector('[name="id"]').value=r.id; } else if (e.target.dataset.del){ if (!confirm('確定刪除？')) return; await api('DELETE', `/api/admin/news/${id}`); location.reload(); } });
-    form.addEventListener('submit', async (e)=>{ e.preventDefault(); const fd=new FormData(form); const data=Object.fromEntries(fd.entries()); data.excerpt=document.getElementById('news-excerpt').value; data.content_html=editor.innerHTML; data.cover_media_id=document.getElementById('news-cover').value||null; data.published_at=document.getElementById('news-published').value||null; data.is_published=document.getElementById('news-published-flag').checked?1:0; const id=data.id; delete data.id; if (id) await api('PUT', `/api/admin/news/${id}`, data); else await api('POST', '/api/admin/news', data); location.reload(); });
+    tbody.addEventListener('click', async (e)=>{ 
+      const id = e.target.dataset.edit || e.target.dataset.del; 
+      if (!id) return; 
+      if (e.target.dataset.edit){ 
+        const r=rows.find(x=> String(x.id)===String(id)); 
+        if (!r) return; 
+        document.getElementById('news-title').value=r.title||''; 
+        document.getElementById('news-slug').value=r.slug||''; 
+        document.getElementById('news-excerpt').value=r.excerpt||''; 
+        editor.innerHTML=r.content_html||''; 
+        document.getElementById('news-cover').value=r.cover_media_id||''; 
+        // Convert SQL datetime to datetime-local format if needed
+        if (r.published_at) {
+          const pubDate = r.published_at.replace(' ', 'T').slice(0, 16);
+          document.getElementById('news-published').value = pubDate;
+        } else {
+          document.getElementById('news-published').value = '';
+        }
+        document.getElementById('news-published-flag').checked=!!r.is_published; 
+        form.querySelector('[name="id"]').value=r.id; 
+      } else if (e.target.dataset.del){ 
+        if (!confirm('確定刪除？')) return; 
+        await api('DELETE', `/api/admin/news/${id}`); 
+        location.reload(); 
+      } 
+    });
+    form.addEventListener('submit', async (e)=>{ 
+      e.preventDefault(); 
+      const fd=new FormData(form); 
+      const data=Object.fromEntries(fd.entries());
+      data.excerpt=document.getElementById('news-excerpt').value;
+      data.content_html=editor.innerHTML;
+      data.cover_media_id=document.getElementById('news-cover').value||null;
+      // Convert datetime-local to SQL format if needed, or use as-is if already in SQL format
+      const pubDateInput = document.getElementById('news-published');
+      if (pubDateInput && pubDateInput.value) {
+        // If it's datetime-local format (contains T), convert it
+        if (pubDateInput.value.includes('T')) {
+          data.published_at = pubDateInput.value.replace('T', ' ') + ':00';
+        } else {
+          data.published_at = pubDateInput.value;
+        }
+      } else {
+        data.published_at = null;
+      }
+      // Explicitly set is_published from checkbox
+      const pubFlag = document.getElementById('news-published-flag');
+      data.is_published = (pubFlag && pubFlag.checked) ? 1 : 0;
+      const id=data.id; delete data.id;
+      if (id) await api('PUT', `/api/admin/news/${id}`, data); else await api('POST', '/api/admin/news', data);
+      location.reload();
+    });
   }
 
   // MEDIA

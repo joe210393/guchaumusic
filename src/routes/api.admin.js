@@ -298,16 +298,18 @@ apiAdminRouter.get('/news', requireAuth, async (_req, res) => {
 });
 apiAdminRouter.post('/news', requireAuth, async (req, res) => {
   const { title, slug, content_html, excerpt, cover_media_id, published_at, is_published } = req.body || {};
+  const pubValue = (is_published === 1 || is_published === '1' || is_published === true) ? 1 : 0;
   await query('INSERT INTO news(title, slug, content_html, excerpt, cover_media_id, published_at, is_published) VALUES (?,?,?,?,?,?,?)', [
-    String(title), String(slug), sanitizeContent(content_html), String(excerpt || ''), cover_media_id || null, published_at || null, is_published ? 1 : 0
+    String(title), String(slug), sanitizeContent(content_html), String(excerpt || ''), cover_media_id || null, published_at || null, pubValue
   ]);
   res.json({ ok: true });
 });
 apiAdminRouter.put('/news/:id', requireAuth, async (req, res) => {
   const { id } = req.params;
   const { title, slug, content_html, excerpt, cover_media_id, published_at, is_published } = req.body || {};
+  const pubValue = (is_published === 1 || is_published === '1' || is_published === true) ? 1 : 0;
   await query('UPDATE news SET title=?, slug=?, content_html=?, excerpt=?, cover_media_id=?, published_at=?, is_published=? WHERE id=?', [
-    String(title), String(slug), sanitizeContent(content_html), String(excerpt || ''), cover_media_id || null, published_at || null, is_published ? 1 : 0, id
+    String(title), String(slug), sanitizeContent(content_html), String(excerpt || ''), cover_media_id || null, published_at || null, pubValue, id
   ]);
   res.json({ ok: true });
 });
@@ -323,16 +325,18 @@ apiAdminRouter.get('/media-records', requireAuth, async (_req, res) => {
 });
 apiAdminRouter.post('/media-records', requireAuth, async (req, res) => {
   const { title, slug, content_html, excerpt, embed_url, cover_media_id, published_at, is_published } = req.body || {};
+  const pubValue = (is_published === 1 || is_published === '1' || is_published === true) ? 1 : 0;
   await query('INSERT INTO media_records(title, slug, content_html, excerpt, embed_url, cover_media_id, published_at, is_published) VALUES (?,?,?,?,?,?,?,?)', [
-    String(title), String(slug), sanitizeContent(content_html), String(excerpt || ''), String(embed_url || ''), cover_media_id || null, published_at || null, is_published ? 1 : 0
+    String(title), String(slug), sanitizeContent(content_html), String(excerpt || ''), String(embed_url || ''), cover_media_id || null, published_at || null, pubValue
   ]);
   res.json({ ok: true });
 });
 apiAdminRouter.put('/media-records/:id', requireAuth, async (req, res) => {
   const { id } = req.params;
   const { title, slug, content_html, excerpt, embed_url, cover_media_id, published_at, is_published } = req.body || {};
+  const pubValue = (is_published === 1 || is_published === '1' || is_published === true) ? 1 : 0;
   await query('UPDATE media_records SET title=?, slug=?, content_html=?, excerpt=?, embed_url=?, cover_media_id=?, published_at=?, is_published=? WHERE id=?', [
-    String(title), String(slug), sanitizeContent(content_html), String(excerpt || ''), String(embed_url || ''), cover_media_id || null, published_at || null, is_published ? 1 : 0, id
+    String(title), String(slug), sanitizeContent(content_html), String(excerpt || ''), String(embed_url || ''), cover_media_id || null, published_at || null, pubValue, id
   ]);
   res.json({ ok: true });
 });
