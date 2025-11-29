@@ -25,6 +25,62 @@
       <div id="admin-calendar" style="display:grid;grid-template-columns:repeat(7,1fr);gap:8px;">
         <!-- Calendar will be rendered here -->
       </div>
+      <style>
+        #admin-calendar .calendar-day-header {
+          text-align: center;
+          font-weight: 600;
+          padding: 8px;
+          color: #666;
+          font-size: 14px;
+          background: #f9fafb;
+          border-radius: 4px;
+        }
+        #admin-calendar .calendar-day {
+          aspect-ratio: 1;
+          border: 1px solid #e5e7eb;
+          border-radius: 8px;
+          padding: 8px;
+          cursor: pointer;
+          transition: all 0.2s;
+          background: #fff;
+          position: relative;
+          min-height: 80px;
+        }
+        #admin-calendar .calendar-day:hover {
+          border-color: #111827;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        #admin-calendar .calendar-day.other-month {
+          opacity: 0.3;
+          background: #f9fafb;
+        }
+        #admin-calendar .calendar-day.today {
+          border-color: #111827;
+          border-width: 2px;
+          font-weight: 700;
+        }
+        #admin-calendar .calendar-day-number {
+          font-size: 14px;
+          margin-bottom: 4px;
+          font-weight: 600;
+        }
+        #admin-calendar .calendar-day-events {
+          display: flex;
+          flex-direction: column;
+          gap: 2px;
+          font-size: 10px;
+        }
+        #admin-calendar .event-dot {
+          width: 6px;
+          height: 6px;
+          border-radius: 50%;
+          display: inline-block;
+          margin-right: 2px;
+        }
+        #admin-calendar .event-dot.course { background: #4A90E2; }
+        #admin-calendar .event-dot.performance { background: #E94B3C; }
+        #admin-calendar .event-dot.space { background: #7B68EE; }
+      </style>
     </div>
     
     <div class="card">
