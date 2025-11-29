@@ -16,26 +16,60 @@
   <div id="admin-header"></div>
   <main class="admin-container container">
     <h1 class="mb-4">影像紀錄編輯</h1>
-    <div class="card">
-      <h3>影像紀錄內容</h3>
-      <div class="toolbar">
-        <button data-cmd="bold">粗體</button>
-        <button data-cmd="italic">斜體</button>
-        <button data-cmd="insertUnorderedList">項目符號</button>
-        <button data-cmd="formatBlock" data-value="h2">H2</button>
-        <button id="mrecords-insert-img" class="ghost">插入圖片</button>
-        <input type="file" id="mrecords-file" accept="image/*" hidden>
-      </div>
-      <div id="mrecords-editor" class="editor" contenteditable="true"></div>
-      <div class="mt-2"><label>背景圖片 Media ID</label> <div class="row"><input id="mrecords-bg" type="number" placeholder="可留空" style="max-width:140px"><button class="ghost" id="mrecords-bg-pick" type="button">選擇</button><button class="ghost" id="mrecords-bg-upload" type="button">上傳</button><input type="file" id="mrecords-bg-file" accept="image/*" hidden></div></div>
-      <div class="mt-2"><button id="mrecords-save">儲存</button></div>
+    <div class="card mb-4">
+      <table id="mrecords-table" class="table">
+        <thead><tr><th>ID</th><th>標題</th><th>Slug</th><th>發佈</th><th>操作</th></tr></thead>
+        <tbody></tbody>
+      </table>
     </div>
-    <div id="about-picker" class="card mt-4" style="display:none">
-      <div class="row" style="justify-content:space-between;align-items:center"><h3 class="mb-2">選擇背景圖片</h3><button class="ghost" id="about-picker-close">關閉</button></div>
-      <div id="about-picker-grid" class="grid" style="grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px"></div>
-      <div class="pager mt-3" id="about-picker-pager"></div>
+    <div class="card">
+      <h3>新增/編輯 影像紀錄</h3>
+      <form id="mrecords-form" class="grid cols-1 gap-4">
+        <input type="hidden" name="id">
+        <div><label>標題</label><input name="title" required></div>
+        <div><label>網址 Slug</label><input name="slug" required></div>
+        <div><label>簡述 (用於列表顯示)</label><textarea name="excerpt" rows="3"></textarea></div>
+        <div><label>嵌入影片/貼文網址 (Youtube / Facebook)</label><input name="embed_url" placeholder="https://www.youtube.com/watch?v=... 或 https://www.facebook.com/.../posts/..."></div>
+        <div>
+          <label>封面圖 (Media ID)</label>
+          <div class="row">
+            <input id="mrecords-cover" name="cover_media_id" type="number" placeholder="Media ID">
+            <button type="button" class="ghost" id="mrecords-cover-pick">選擇</button>
+            <button type="button" class="ghost" id="mrecords-cover-upload">上傳</button>
+            <input type="file" id="mrecords-cover-file" accept="image/*" hidden>
+          </div>
+        </div>
+        <div>
+          <label>發佈時間</label>
+          <input type="datetime-local" id="mrecords-published" name="published_at">
+        </div>
+        <div>
+          <label class="checkbox-label">
+            <input type="checkbox" id="mrecords-published-flag" name="is_published">
+            <span>發佈</span>
+          </label>
+        </div>
+        <div>
+          <label>完整內容 (選填)</label>
+          <div id="mrecords-toolbar" class="toolbar">
+            <button type="button" data-cmd="bold">粗體</button>
+            <button type="button" data-cmd="italic">斜體</button>
+            <button type="button" data-cmd="insertUnorderedList">清單</button>
+            <button type="button" data-cmd="formatBlock" data-value="h2">H2</button>
+            <button type="button" id="mrecords-insert-img" class="ghost">圖片</button>
+            <input type="file" id="mrecords-insert-file" accept="image/*" hidden>
+          </div>
+          <div id="mrecords-editor" class="editor" contenteditable="true"></div>
+        </div>
+        <div><button type="submit">儲存</button></div>
+      </form>
+    </div>
+    
+    <div id="mrecords-picker" class="card mt-4" style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); z-index:999; width:90%; max-width:800px; max-height:90vh; overflow:auto; box-shadow:0 10px 25px rgba(0,0,0,0.2);">
+      <div class="row" style="justify-content:space-between;align-items:center"><h3 class="mb-2">選擇封面圖片</h3><button class="ghost" id="mrecords-picker-close">關閉</button></div>
+      <div id="mrecords-picker-grid" class="grid" style="grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px"></div>
+      <div class="pager mt-3" id="mrecords-picker-pager"></div>
     </div>
   </main>
 </body>
 </html>
-

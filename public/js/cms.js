@@ -284,60 +284,152 @@
           setInterval(()=>show(i+1), 5000);
         }
       } catch {}
-      const data = await fetchJson('/api/public/news?limit=10');
-      const section = q('#latest-news');
-      bindList(section, data.items, (item) => ({
-        title: item.title,
-        excerpt: item.excerpt || '',
-        cover_url: item.cover_url || '',
-        link: `/news-post.html?slug=${encodeURIComponent(item.slug)}`
-      }));
-      // latest posts top 3
-      try {
-        const posts = await fetchJson('/api/public/posts?limit=3');
-        const sec = q('#latest-posts');
-        const tpl = q('#post-item-tpl');
-        const target = q('[data-target="list"]', sec);
-        target.innerHTML = '';
-        posts.items.forEach(item => {
-          const node = document.importNode(tpl.content, true);
-          qa('[data-prop]', node).forEach(el => {
-            const [attr, path] = el.getAttribute('data-prop').split(':');
-            let value;
-            if (path === 'title') value = item.title;
-            else if (path === 'excerpt') value = item.excerpt || '';
-            else if (path === 'cover_url') value = item.cover_url || '';
-            else if (path === 'link') value = `/blog-post.html?slug=${encodeURIComponent(item.slug)}`;
-            if (attr === 'text') el.textContent = value ?? '';
-            else el.setAttribute(attr, value ?? '');
-          });
-          target.appendChild(node);
-        });
-      } catch {}
+      // New Homepage Logic: 7 Cards Grid
+      const homeGrid = q('#home-grid');
+      const cardTpl = q('#home-card-tpl');
+      
+      if (homeGrid && cardTpl) {
+          const sections = [
+              { title: '音樂課程', slug: 'service-courses', type: 'page' },
+              { title: '商業演出', slug: 'service-commercial', type: 'page' },
+              { title: '樂器販售', slug: 'service-sales', type: 'page' },
+              { title: '共享與藝術空間', slug: 'service-space', type: 'page' },
+              { title: '音樂觀光體驗', slug: 'service-tourism', type: 'page' },
+              { title: '相關報導', slug: 'news', type: 'list' },
+              { title: '影像紀錄', slug: 'media-records', type: 'list' }
+          ];
+          
+          homeGrid.innerHTML = '';
+          
+          for (const sec of sections) {
+              const node = document.importNode(cardTpl.content, true);
+              const h3 = node.querySelector('h3');
+              const p = node.querySelector('p');
+              const a = node.querySelector('a');
+              
+              h3.textContent = sec.title;
+              
+              // Fetch content
+              if (sec.type === 'page') {
+                  a.href = `/${sec.slug}.html`;
+                  try {
+                      const pageData = await fetchJson(`/api/public/pages/${sec.slug}`);
+                      const plain = (pageData.content_html || '').replace(/<[^>]+>/g, '');
+                      p.textContent = plain.slice(0, 150) + (plain.length > 150 ? '...' : '');
+                  } catch { p.textContent = 'Loading...'; }
+              } else {
+                  // List type (News / Media) - fetch latest item
+                  a.href = `/${sec.slug}.html`;
+                  try {
+                      // Use limit=1 to get latest
+                      const listData = await fetchJson(`/api/public/${sec.slug}?limit=1`);
+                      if (listData.items && listData.items.length > 0) {
+                          const item = listData.items[0];
+                          const plain = (item.excerpt || item.content_html || '').replace(/<[^>]+>/g, '');
+                          p.textContent = plain.slice(0, 150) + (plain.length > 150 ? '...' : '');
+                      } else {
+                          p.textContent = '暫無內容';
+                      }
+                  } catch { p.textContent = '...'; }
+              }
+              
+              homeGrid.appendChild(node);
+          }
+      }
 
-      // Top 3 legends
-      try {
-        const legends = await fetchJson('/api/public/leaderboard');
-        const sec = q('#latest-legend');
-        const tpl = q('#legend-item-tpl');
-        const target = q('[data-target="list"]', sec);
-        target.innerHTML = '';
-        legends.slice(0, 3).forEach(item => {
-          const node = document.importNode(tpl.content, true);
-          qa('[data-prop]', node).forEach(el => {
-            const [attr, path] = el.getAttribute('data-prop').split(':');
-            let value;
-            if (path === 'title') value = item.title;
-            else if (path === 'excerpt') value = item.excerpt || '';
-            else if (path === 'cover_url') value = item.cover_url || '';
-            else if (path === 'link') value = `/leaderboard.html`;
-            if (attr === 'text') el.textContent = value ?? '';
-            else el.setAttribute(attr, value ?? '');
-          });
-          target.appendChild(node);
-        });
-      } catch {}
       applyBackgroundFromSettings('home', settings);
+    } else if (page === 'media-records') {
+        const params = new URLSearchParams(location.search);
+        const pageNum = Number(params.get('page') || '1');
+        const data = await fetchJson(`/api/public/media-records?page=${pageNum}&limit=9`);
+        const gridWrap = q('#media-list');
+        const tpl = q('#media-item-tpl');
+        gridWrap.innerHTML = '';
+        
+        function getEmbed(url) {
+            if (!url) return '';
+            try {
+                const u = new URL(url);
+                if (u.hostname.includes('youtube.com') || u.hostname.includes('youtu.be')) {
+                    let vid = u.searchParams.get('v');
+                    if (u.hostname === 'youtu.be') vid = u.pathname.slice(1);
+                    if (u.pathname.includes('/embed/')) vid = u.pathname.split('/')[2];
+                    if (vid) return `<iframe src="https://www.youtube.com/embed/${vid}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen style="width:100%;height:200px;"></iframe>`;
+                }
+                if (u.hostname.includes('facebook.com')) {
+                    // Facebook basic iframe embed
+                    const encoded = encodeURIComponent(url);
+                    return `<iframe src="https://www.facebook.com/plugins/post.php?href=${encoded}&width=500&show_text=true&height=200&appId" width="100%" height="200" style="border:none;overflow:hidden" scrolling="no" frameborder="0" allowfullscreen="true" allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"></iframe>`;
+                }
+            } catch {}
+            return ''; // Fallback or link
+        }
+
+        data.items.forEach(item => {
+            const node = document.importNode(tpl.content, true);
+            const embedHtml = getEmbed(item.embed_url);
+            
+            qa('[data-prop]', node).forEach(el => {
+                const [attr, path] = el.getAttribute('data-prop').split(':');
+                let value;
+                if (path === 'title') value = item.title;
+                else if (path === 'excerpt') value = item.excerpt;
+                else if (path === 'link') value = `/media-record-post.html?slug=${encodeURIComponent(item.slug)}`;
+                else if (path === 'embed') {
+                    if (attr === 'html') { el.innerHTML = embedHtml; return; }
+                }
+                
+                if (attr === 'text') el.textContent = value || '';
+                else el.setAttribute(attr, value || '');
+            });
+            if (!embedHtml) {
+                // If no embed, maybe show cover image?
+                // For now just hide embed container if empty
+                const container = node.querySelector('.media-embed-container');
+                if (container && !embedHtml) container.style.display = 'none';
+            }
+            gridWrap.appendChild(node);
+        });
+        
+        // Pager
+        const pager = q('#pager');
+        const totalPages = Math.ceil(data.total / data.limit);
+        pager.innerHTML = '';
+        for (let i = 1; i <= totalPages; i++) {
+            const a = document.createElement('a');
+            a.href = `?page=${i}`;
+            a.textContent = i;
+            a.style.marginRight = '8px';
+            if (i === data.page) a.style.fontWeight = '700';
+            pager.appendChild(a);
+        }
+        applyBackgroundFromSettings('about', settings); // Reuse about bg or add new setting
+    } else if (page === 'media-record-post') {
+        const slug = getQueryParam('slug');
+        const item = await fetchJson(`/api/public/media-records/${encodeURIComponent(slug)}`);
+        q('#post-title').textContent = item.title;
+        q('#post-content').innerHTML = item.content_html || '';
+        
+        // Render large embed
+        if (item.embed_url) {
+             let embedHtml = '';
+             try {
+                const u = new URL(item.embed_url);
+                if (u.hostname.includes('youtube.com') || u.hostname.includes('youtu.be')) {
+                    let vid = u.searchParams.get('v');
+                    if (u.hostname === 'youtu.be') vid = u.pathname.slice(1);
+                    if (u.pathname.includes('/embed/')) vid = u.pathname.split('/')[2];
+                    if (vid) embedHtml = `<iframe src="https://www.youtube.com/embed/${vid}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen style="width:100%;aspect-ratio:16/9;"></iframe>`;
+                }
+                if (u.hostname.includes('facebook.com')) {
+                    const encoded = encodeURIComponent(item.embed_url);
+                    embedHtml = `<iframe src="https://www.facebook.com/plugins/post.php?href=${encoded}&width=750&show_text=true&height=500&appId" width="100%" height="500" style="border:none;overflow:hidden" scrolling="no" frameborder="0" allowfullscreen="true" allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"></iframe>`;
+                }
+            } catch {}
+            if (embedHtml) q('#post-embed').innerHTML = embedHtml;
+        }
+        
+        applyBackgroundFromSettings('about', settings);
     } else if (page === 'blog') {
       const params = new URLSearchParams(location.search);
       const pageNum = Number(params.get('page') || '1');

@@ -351,8 +351,59 @@
   }
 
   async function initMediaRecordsEditor() {
-      await setupPageEditor('mrecords', 'media-records', '影像紀錄');
-      document.getElementById('about-picker-close')?.addEventListener('click', (e)=>{e.preventDefault(); document.getElementById('about-picker').style.display='none';});
+    const table = document.getElementById('mrecords-table');
+    const form = document.getElementById('mrecords-form');
+    const editor = document.getElementById('mrecords-editor');
+    const toolbar = document.getElementById('mrecords-toolbar');
+    if (!table || !form || !editor) return;
+
+    const rows = await api('GET', '/api/admin/media-records');
+    const tbody = table.querySelector('tbody');
+    tbody.innerHTML = '';
+    rows.forEach(r => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${r.id}</td><td>${r.title}</td><td>${r.slug}</td><td>${r.is_published ? '✔' : '—'}</td><td><button data-edit="${r.id}">編輯</button> <button data-del="${r.id}">刪除</button></td>`;
+      tbody.appendChild(tr);
+    });
+
+    toolbar?.addEventListener('click', (e) => { const btn=e.target.closest('[data-cmd]'); if (!btn) return; const cmd=btn.getAttribute('data-cmd'); const val=btn.getAttribute('data-value')||null; document.execCommand(cmd,false,val); });
+    document.getElementById('mrecords-insert-img')?.addEventListener('click', ()=> document.getElementById('mrecords-insert-file').click());
+    document.getElementById('mrecords-insert-file')?.addEventListener('change', async (e) => { const f=e.target.files?.[0]; if (!f) return; const csrf=await getCsrf(); const fd=new FormData(); fd.append('file', f); const res=await fetch('/api/admin/media/upload',{method:'POST', headers:{'CSRF-Token': csrf}, body: fd, credentials:'same-origin'}); const j=await res.json(); if (j?.path){ const img=document.createElement('img'); img.src=j.path; img.alt=''; editor.appendChild(img);} });
+
+    // picker
+    const picker = document.getElementById('mrecords-picker'); const pickerGrid=document.getElementById('mrecords-picker-grid'); const pickerPager=document.getElementById('mrecords-picker-pager');
+    async function loadMedia(page=1){ const data=await api('GET', `/api/admin/media?page=${page}&limit=24`); pickerGrid.innerHTML=''; data.items.forEach(it=>{ const btn=document.createElement('button'); btn.className='btn ghost'; btn.style.display='block'; btn.style.padding='0'; btn.style.borderRadius='12px'; btn.style.overflow='hidden'; btn.style.border='1px solid #e5e7eb'; btn.style.background='#fff'; btn.innerHTML=`<img src="${it.file_path}" alt="" style="width:100%;height:120px;object-fit:cover"><div style="padding:8px 10px;font-size:12px;color:#374151;">${it.file_name}</div>`; btn.addEventListener('click',()=>{ document.getElementById('mrecords-cover').value = it.id || ''; picker.style.display='none'; }); pickerGrid.appendChild(btn); }); pickerPager.innerHTML=''; const totalPages=Math.ceil(data.total/data.limit); for(let i=1;i<=totalPages;i++){ const a=document.createElement('a'); a.href='#'; a.textContent=i; a.className='btn ghost'; a.style.padding='6px 10px'; a.style.borderRadius='8px'; if (i===data.page){ a.style.background='#111827'; a.style.color='#fff'; } a.addEventListener('click',(e)=>{e.preventDefault(); loadMedia(i);}); pickerPager.appendChild(a);} }
+    document.getElementById('mrecords-picker-close')?.addEventListener('click',(e)=>{e.preventDefault(); picker.style.display='none';});
+    document.getElementById('mrecords-cover-pick')?.addEventListener('click',()=>{ picker.style.display='block'; loadMedia(1); });
+    document.getElementById('mrecords-cover-upload')?.addEventListener('click',()=> document.getElementById('mrecords-cover-file').click());
+    document.getElementById('mrecords-cover-file')?.addEventListener('change', async (e)=>{ const f=e.target.files?.[0]; if (!f) return; const csrf=await getCsrf(); const fd=new FormData(); fd.append('file', f); const res=await fetch('/api/admin/media/upload',{method:'POST', headers:{'CSRF-Token': csrf}, body: fd, credentials:'same-origin'}); const j=await res.json(); if (j?.media_id) document.getElementById('mrecords-cover').value=j.media_id; });
+
+    tbody.addEventListener('click', async (e)=>{
+      const id = e.target.dataset.edit || e.target.dataset.del; if (!id) return;
+      if (e.target.dataset.edit){ const r=rows.find(x=> String(x.id)===String(id)); if (!r) return;
+        form.querySelector('[name="title"]').value=r.title||'';
+        form.querySelector('[name="slug"]').value=r.slug||'';
+        form.querySelector('[name="excerpt"]').value=r.excerpt||'';
+        form.querySelector('[name="embed_url"]').value=r.embed_url||'';
+        editor.innerHTML=r.content_html||'';
+        document.getElementById('mrecords-cover').value=r.cover_media_id||'';
+        document.getElementById('mrecords-published').value=r.published_at||'';
+        document.getElementById('mrecords-published-flag').checked=!!r.is_published;
+        form.querySelector('[name="id"]').value=r.id;
+      } else if (e.target.dataset.del){
+        if (!confirm('確定刪除？')) return; await api('DELETE', `/api/admin/media-records/${id}`); location.reload();
+      }
+    });
+    form.addEventListener('submit', async (e)=>{
+      e.preventDefault(); const fd=new FormData(form); const data=Object.fromEntries(fd.entries());
+      data.content_html=editor.innerHTML;
+      data.cover_media_id=document.getElementById('mrecords-cover').value||null;
+      data.published_at=document.getElementById('mrecords-published').value||null;
+      data.is_published=document.getElementById('mrecords-published-flag').checked?1:0;
+      const id=data.id; delete data.id;
+      if (id) await api('PUT', `/api/admin/media-records/${id}`, data); else await api('POST', '/api/admin/media-records', data);
+      location.reload();
+    });
   }
 
 

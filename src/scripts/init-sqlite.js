@@ -172,6 +172,26 @@ try {
   insertMenu.run('影像紀錄', 'media-records', '/media-records.html', 40, null);
   insertMenu.run('聯絡我們', 'contact', '/contact.html', 50, null);
 
+  // Check for media_records table
+  try {
+    const test = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='media_records'").get();
+    if (!test) {
+      console.log('Creating media_records table...');
+      db.prepare(`CREATE TABLE IF NOT EXISTS media_records (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        title TEXT,
+        slug TEXT UNIQUE,
+        content_html TEXT,
+        excerpt TEXT,
+        embed_url TEXT,
+        cover_media_id INTEGER,
+        published_at DATETIME,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        is_published INTEGER DEFAULT 0
+      )`).run();
+    }
+  } catch (e) { console.error('Failed to check/create media_records table', e); }
+
   console.log('Menu structure updated.');
 
   db.close();

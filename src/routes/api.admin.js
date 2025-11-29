@@ -316,6 +316,31 @@ apiAdminRouter.delete('/news/:id', requireAuth, async (req, res) => {
   res.json({ ok: true });
 });
 
+// 影像紀錄 CRUD
+apiAdminRouter.get('/media-records', requireAuth, async (_req, res) => {
+  const rows = await query('SELECT * FROM media_records ORDER BY id DESC');
+  res.json(rows);
+});
+apiAdminRouter.post('/media-records', requireAuth, async (req, res) => {
+  const { title, slug, content_html, excerpt, embed_url, cover_media_id, published_at, is_published } = req.body || {};
+  await query('INSERT INTO media_records(title, slug, content_html, excerpt, embed_url, cover_media_id, published_at, is_published) VALUES (?,?,?,?,?,?,?,?)', [
+    String(title), String(slug), sanitizeContent(content_html), String(excerpt || ''), String(embed_url || ''), cover_media_id || null, published_at || null, is_published ? 1 : 0
+  ]);
+  res.json({ ok: true });
+});
+apiAdminRouter.put('/media-records/:id', requireAuth, async (req, res) => {
+  const { id } = req.params;
+  const { title, slug, content_html, excerpt, embed_url, cover_media_id, published_at, is_published } = req.body || {};
+  await query('UPDATE media_records SET title=?, slug=?, content_html=?, excerpt=?, embed_url=?, cover_media_id=?, published_at=?, is_published=? WHERE id=?', [
+    String(title), String(slug), sanitizeContent(content_html), String(excerpt || ''), String(embed_url || ''), cover_media_id || null, published_at || null, is_published ? 1 : 0, id
+  ]);
+  res.json({ ok: true });
+});
+apiAdminRouter.delete('/media-records/:id', requireAuth, async (req, res) => {
+  await query('DELETE FROM media_records WHERE id=?', [req.params.id]);
+  res.json({ ok: true });
+});
+
 // 傳奇榜 CRUD（文章型）
 apiAdminRouter.get('/leaderboard', requireAuth, async (_req, res) => {
   const rows = await query('SELECT * FROM leaderboard ORDER BY id DESC');

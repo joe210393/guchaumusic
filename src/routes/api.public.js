@@ -115,6 +115,33 @@ apiPublicRouter.get('/news/:slug', async (req, res) => {
   res.json(item);
 });
 
+// 影像紀錄 列表／內頁
+apiPublicRouter.get('/media-records', async (req, res) => {
+  const page = Math.max(1, Number(req.query.page || 1));
+  const limit = Math.min(50, Math.max(1, Number(req.query.limit || 10)));
+  const offset = (page - 1) * limit;
+  const where = ['is_published = 1'];
+  const params = [];
+  const whereSql = where.length ? `WHERE ${where.join(' AND ')}` : '';
+  const safeLimit = Number.isFinite(limit) ? Math.max(1, Math.min(50, Math.trunc(limit))) : 10;
+  const safeOffset = Number.isFinite(offset) ? Math.max(0, Math.trunc(offset)) : 0;
+  const items = await query(
+    `SELECT m.id, m.title, m.slug, m.published_at, m.excerpt, m.embed_url, md.file_path AS cover_url
+     FROM media_records m LEFT JOIN media md ON md.id = m.cover_media_id
+     ${whereSql} ORDER BY m.published_at DESC LIMIT ${safeLimit} OFFSET ${safeOffset}`,
+    params
+  );
+  const [{ cnt }] = await query(`SELECT COUNT(1) AS cnt FROM media_records m ${whereSql}`, params);
+  res.json({ items, page, limit, total: cnt });
+});
+
+apiPublicRouter.get('/media-records/:slug', async (req, res) => {
+  const rows = await query('SELECT * FROM media_records WHERE slug = ? AND is_published = 1', [req.params.slug]);
+  const item = rows[0];
+  if (!item) return res.status(404).json({ error: 'Not found' });
+  res.json(item);
+});
+
 // 傳奇榜清單（僅已發佈、含封面）
 apiPublicRouter.get('/leaderboard', async (_req, res) => {
   const rows = await query(
