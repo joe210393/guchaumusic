@@ -266,6 +266,61 @@
       }
   }
 
+  // Helper function to insert image at cursor position in contenteditable
+  function insertImageAtCursor(editorEl, imageUrl) {
+    if (!editorEl) return;
+    
+    // Focus the editor to ensure selection is active
+    editorEl.focus();
+    
+    const img = document.createElement('img');
+    img.src = imageUrl;
+    img.alt = '';
+    img.style.maxWidth = '100%';
+    img.style.height = 'auto';
+    img.style.borderRadius = '8px';
+    img.style.margin = '16px 0';
+    
+    try {
+      const selection = window.getSelection();
+      const range = selection.getRangeAt(0);
+      
+      // If there's a valid selection/range, insert at that position
+      if (range && range.collapsed === false || range.startContainer) {
+        // Delete any selected content
+        range.deleteContents();
+        // Insert the image
+        range.insertNode(img);
+        // Move cursor after the image
+        range.setStartAfter(img);
+        range.collapse(true);
+        selection.removeAllRanges();
+        selection.addRange(range);
+      } else {
+        // Fallback: try execCommand (works in most browsers)
+        if (document.execCommand && document.execCommand('insertImage', false, imageUrl)) {
+          // Success
+        } else {
+          // Last resort: append to end
+          editorEl.appendChild(img);
+        }
+      }
+    } catch (err) {
+      // If Selection API fails, try execCommand
+      try {
+        if (document.execCommand && document.execCommand('insertImage', false, imageUrl)) {
+          // Success
+        } else {
+          // Last resort: append to end
+          editorEl.appendChild(img);
+        }
+      } catch (e) {
+        // Final fallback: append to end
+        editorEl.appendChild(img);
+      }
+    }
+  }
+
   async function setupPageEditor(prefix, slug, title) {
       // Toolbar binding
       const toolbar = document.querySelector(`#${prefix}-editor`)?.previousElementSibling;
@@ -283,7 +338,10 @@
           const fd = new FormData(); fd.append('file', file);
           const res = await fetch('/api/admin/media/upload', { method:'POST', headers: { 'CSRF-Token': csrf }, body: fd, credentials: 'same-origin' });
           const j = await res.json();
-          if (j?.path) { const img = document.createElement('img'); img.src = j.path; img.alt = ''; editorEl.appendChild(img); }
+          if (j?.path || j?.file_path) {
+            const imageUrl = j.path || j.file_path;
+            insertImageAtCursor(editorEl, imageUrl);
+          }
       }
       document.getElementById(`${prefix}-insert-img`)?.addEventListener('click', () => document.getElementById(`${prefix}-file`).click());
       document.getElementById(`${prefix}-file`)?.addEventListener('change', (e) => e.target.files[0] && uploadAndInsert(e.target.files[0], document.getElementById(`${prefix}-editor`)));
@@ -368,7 +426,7 @@
 
     toolbar?.addEventListener('click', (e) => { const btn=e.target.closest('[data-cmd]'); if (!btn) return; const cmd=btn.getAttribute('data-cmd'); const val=btn.getAttribute('data-value')||null; document.execCommand(cmd,false,val); });
     document.getElementById('mrecords-insert-img')?.addEventListener('click', ()=> document.getElementById('mrecords-insert-file').click());
-    document.getElementById('mrecords-insert-file')?.addEventListener('change', async (e) => { const f=e.target.files?.[0]; if (!f) return; const csrf=await getCsrf(); const fd=new FormData(); fd.append('file', f); const res=await fetch('/api/admin/media/upload',{method:'POST', headers:{'CSRF-Token': csrf}, body: fd, credentials:'same-origin'}); const j=await res.json(); if (j?.path){ const img=document.createElement('img'); img.src=j.path; img.alt=''; editor.appendChild(img);} });
+    document.getElementById('mrecords-insert-file')?.addEventListener('change', async (e) => { const f=e.target.files?.[0]; if (!f) return; const csrf=await getCsrf(); const fd=new FormData(); fd.append('file', f); const res=await fetch('/api/admin/media/upload',{method:'POST', headers:{'CSRF-Token': csrf}, body: fd, credentials:'same-origin'}); const j=await res.json(); if (j?.path || j?.file_path) { insertImageAtCursor(editor, j.path || j.file_path); } });
 
     // picker
     const picker = document.getElementById('mrecords-picker'); const pickerGrid=document.getElementById('mrecords-picker-grid'); const pickerPager=document.getElementById('mrecords-picker-pager');
@@ -615,7 +673,7 @@
     rows.forEach(r => { const tr=document.createElement('tr'); tr.innerHTML = `<td>${r.id}</td><td>${r.title}</td><td>${r.slug}</td><td>${r.is_published ? '✔' : '—'}</td><td><button data-edit="${r.id}">編輯</button> <button data-del="${r.id}">刪除</button></td>`; tbody.appendChild(tr); });
     toolbar?.addEventListener('click', (e) => { const btn=e.target.closest('[data-cmd]'); if (!btn) return; const cmd=btn.getAttribute('data-cmd'); const val=btn.getAttribute('data-value')||null; document.execCommand(cmd,false,val); });
     document.getElementById('news-insert-img')?.addEventListener('click', ()=> document.getElementById('news-insert-file').click());
-    document.getElementById('news-insert-file')?.addEventListener('change', async (e) => { const f=e.target.files?.[0]; if (!f) return; const csrf=await getCsrf(); const fd=new FormData(); fd.append('file', f); const res=await fetch('/api/admin/media/upload',{method:'POST', headers:{'CSRF-Token': csrf}, body: fd, credentials:'same-origin'}); const j=await res.json(); if (j?.path){ const img=document.createElement('img'); img.src=j.path; img.alt=''; editor.appendChild(img);} });
+    document.getElementById('news-insert-file')?.addEventListener('change', async (e) => { const f=e.target.files?.[0]; if (!f) return; const csrf=await getCsrf(); const fd=new FormData(); fd.append('file', f); const res=await fetch('/api/admin/media/upload',{method:'POST', headers:{'CSRF-Token': csrf}, body: fd, credentials:'same-origin'}); const j=await res.json(); if (j?.path || j?.file_path) { insertImageAtCursor(editor, j.path || j.file_path); } });
     // picker/upload cover
     const picker = document.getElementById('news-picker'); const pickerGrid=document.getElementById('news-picker-grid'); const pickerPager=document.getElementById('news-picker-pager');
     async function loadMedia(page=1){ const data=await api('GET', `/api/admin/media?page=${page}&limit=24`); pickerGrid.innerHTML=''; data.items.forEach(it=>{ const btn=document.createElement('button'); btn.className='btn ghost'; btn.style.display='block'; btn.style.padding='0'; btn.style.borderRadius='12px'; btn.style.overflow='hidden'; btn.style.border='1px solid #e5e7eb'; btn.style.background='#fff'; btn.innerHTML=`<img src="${it.file_path}" alt="" style="width:100%;height:120px;object-fit:cover"><div style=\"padding:8px 10px;font-size:12px;color:#374151;\">${it.file_name}</div>`; btn.addEventListener('click',()=>{ document.getElementById('news-cover').value = it.id || ''; picker.style.display='none'; }); pickerGrid.appendChild(btn); }); pickerPager.innerHTML=''; const totalPages=Math.ceil(data.total/data.limit); for(let i=1;i<=totalPages;i++){ const a=document.createElement('a'); a.href='#'; a.textContent=i; a.className='btn ghost'; a.style.padding='6px 10px'; a.style.borderRadius='8px'; if (i===data.page){ a.style.background='#111827'; a.style.color='#fff'; } a.addEventListener('click',(e)=>{e.preventDefault(); loadMedia(i);}); pickerPager.appendChild(a);} }
@@ -999,7 +1057,7 @@
       const fd = new FormData(); fd.append('file', f);
       const res = await fetch('/api/admin/media/upload', { method:'POST', headers:{ 'CSRF-Token': csrf }, body: fd, credentials:'same-origin' });
       const j = await res.json();
-      if (j?.path) { const img = document.createElement('img'); img.src = j.path; img.alt=''; editor.appendChild(img); }
+      if (j?.path || j?.file_path) { insertImageAtCursor(editor, j.path || j.file_path); }
     });
 
     // cover pick/upload
@@ -1475,13 +1533,9 @@
           if (pickerMode === 'cover') {
             prodForm.querySelector('[name="cover_media_id"]').value = it.id || '';
           } else if (pickerMode === 'description') {
-            // Insert image into description editor
-            const img = document.createElement('img');
-            img.src = it.file_path;
-            img.alt = '';
-            img.style.maxWidth = '100%';
+            // Insert image into description editor at cursor position
             if (descEditor) {
-              descEditor.appendChild(img);
+              insertImageAtCursor(descEditor, it.file_path);
             }
           } else {
             productImages.push({ media_id: it.id, file_path: it.file_path, file_name: it.file_name });
@@ -1635,14 +1689,10 @@
         const j = await res.json();
         console.log('[Product Desc Upload] Response:', j);
         if (j && (j.file_path || j.path)) {
-          const img = document.createElement('img');
-          img.src = j.file_path || j.path;
-          img.alt = '';
-          img.style.maxWidth = '100%';
           if (descEditor) {
-            descEditor.appendChild(img);
+            insertImageAtCursor(descEditor, j.file_path || j.path);
+            alert('圖片已插入！');
           }
-          alert('圖片已插入！');
         } else {
           alert('上傳失敗：' + (j?.error || '未知錯誤'));
         }
@@ -1799,7 +1849,7 @@
     });
     toolbar?.addEventListener('click', (e) => { const btn=e.target.closest('[data-cmd]'); if (!btn) return; const cmd=btn.getAttribute('data-cmd'); const val=btn.getAttribute('data-value')||null; document.execCommand(cmd,false,val); });
     document.getElementById('plan-insert-img')?.addEventListener('click', ()=> document.getElementById('plan-insert-file').click());
-    document.getElementById('plan-insert-file')?.addEventListener('change', async (e) => { const f=e.target.files?.[0]; if (!f) return; const csrf=await getCsrf(); const fd=new FormData(); fd.append('file', f); const res=await fetch('/api/admin/media/upload',{method:'POST', headers:{'CSRF-Token': csrf}, body: fd, credentials:'same-origin'}); const j=await res.json(); if (j?.path){ const img=document.createElement('img'); img.src=j.path; img.alt=''; editor.appendChild(img);} });
+    document.getElementById('plan-insert-file')?.addEventListener('change', async (e) => { const f=e.target.files?.[0]; if (!f) return; const csrf=await getCsrf(); const fd=new FormData(); fd.append('file', f); const res=await fetch('/api/admin/media/upload',{method:'POST', headers:{'CSRF-Token': csrf}, body: fd, credentials:'same-origin'}); const j=await res.json(); if (j?.path || j?.file_path) { insertImageAtCursor(editor, j.path || j.file_path); } });
     // cover pick/upload
     const picker = document.createElement('div'); picker.id='plans-picker'; picker.className='modal'; picker.style.display='none'; picker.innerHTML = `<div class="modal-card"><header><strong>選擇封面</strong><button id="plans-picker-close" class="btn ghost">✕</button></header><div id="plans-picker-grid" class="grid horizontal-cards"></div><footer id="plans-picker-pager"></footer></div>`; document.body.appendChild(picker);
     const pickerGrid = picker.querySelector('#plans-picker-grid'); const pickerPager = picker.querySelector('#plans-picker-pager');
