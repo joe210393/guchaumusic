@@ -2225,13 +2225,15 @@
             'interested': '#3b82f6',
             'confirmed': '#10b981',
             'cancelled': '#ef4444',
-            'pending': '#f59e0b'
+            'pending': '#f59e0b',
+            'contacted': '#8b5cf6'
           };
           const statusNames = {
             'interested': '有興趣',
             'confirmed': '已確認',
             'cancelled': '已取消',
-            'pending': '待處理'
+            'pending': '待處理',
+            'contacted': '已聯繫'
           };
           
           const item = document.createElement('div');
@@ -2247,6 +2249,44 @@
             item.style.background = 'transparent';
           });
           
+          const statusSelect = document.createElement('select');
+          statusSelect.style.padding = '4px 8px';
+          statusSelect.style.borderRadius = '4px';
+          statusSelect.style.border = '1px solid #e5e7eb';
+          statusSelect.style.fontSize = '11px';
+          statusSelect.style.background = statusColors[reg.status] || '#999';
+          statusSelect.style.color = '#fff';
+          statusSelect.style.fontWeight = '500';
+          statusSelect.style.cursor = 'pointer';
+          
+          const statusOptions = [
+            { value: 'interested', label: '有興趣' },
+            { value: 'contacted', label: '已聯繫' },
+            { value: 'confirmed', label: '已確認' },
+            { value: 'cancelled', label: '已取消' },
+            { value: 'pending', label: '待處理' }
+          ];
+          
+          statusOptions.forEach(opt => {
+            const option = document.createElement('option');
+            option.value = opt.value;
+            option.textContent = opt.label;
+            if (opt.value === reg.status) option.selected = true;
+            statusSelect.appendChild(option);
+          });
+          
+          statusSelect.addEventListener('change', async (e) => {
+            const newStatus = e.target.value;
+            try {
+              await api('PUT', `/api/admin/events/registrations/${reg.id}`, { status: newStatus });
+              statusSelect.style.background = statusColors[newStatus] || '#999';
+              loadLatestRegistrations(); // 重新載入以更新顯示
+            } catch (err) {
+              alert('更新狀態失敗：' + (err.message || '未知錯誤'));
+              e.target.value = reg.status; // 恢復原值
+            }
+          });
+          
           item.innerHTML = `
             <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:8px;">
               <div style="flex:1;">
@@ -2260,17 +2300,22 @@
                   ${formattedDate}${timeStr}
                 </div>
               </div>
-              <span style="display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:500;background:${statusColors[reg.status] || '#999'};color:#fff;">
-                ${statusNames[reg.status] || reg.status}
-              </span>
             </div>
-            <div style="display:flex;align-items:center;gap:4px;margin-top:8px;">
+            <div style="display:flex;align-items:center;gap:8px;margin-top:8px;margin-bottom:8px;">
               <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${typeColors[reg.event_type] || '#999'};"></span>
               <span style="font-size:11px;color:#666;">${typeNames[reg.event_type] || reg.event_type}</span>
+            </div>
+            <div style="margin-bottom:8px;">
+              <label style="font-size:11px;color:#666;display:block;margin-bottom:4px;">狀態：</label>
             </div>
             ${reg.phone_mobile ? `<div style="font-size:11px;color:#666;margin-top:4px;">📞 ${reg.phone_mobile}</div>` : ''}
             ${reg.email ? `<div style="font-size:11px;color:#666;">✉️ ${reg.email}</div>` : ''}
           `;
+          
+          const statusContainer = item.querySelector('div:last-of-type');
+          if (statusContainer) {
+            statusContainer.appendChild(statusSelect);
+          }
           
           container.appendChild(item);
         });

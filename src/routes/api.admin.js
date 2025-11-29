@@ -995,4 +995,15 @@ apiAdminRouter.get('/events/registrations/latest', requireAuth, async (req, res)
   res.json(rows);
 });
 
+// 更新報名記錄狀態（後台）
+apiAdminRouter.put('/events/registrations/:id', requireAuth, async (req, res) => {
+  const { status } = req.body;
+  const validStatuses = ['interested', 'confirmed', 'cancelled', 'pending', 'contacted'];
+  if (!validStatuses.includes(status)) {
+    return res.status(400).json({ error: 'Invalid status' });
+  }
+  await query('UPDATE event_registrations SET status = ?, updated_at = datetime(\'now\') WHERE id = ?', [status, req.params.id]);
+  res.json({ ok: true });
+});
+
 
