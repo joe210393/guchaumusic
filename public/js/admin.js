@@ -1180,6 +1180,53 @@
         form.querySelector('[name="media_id"]').value = j.media_id;
       }
     });
+
+    // Media picker for slides
+    const pickBtn = document.getElementById('slide-pick-btn');
+    const picker = document.getElementById('slide-picker');
+    const pickerGrid = document.getElementById('slide-picker-grid');
+    const pickerPager = document.getElementById('slide-picker-pager');
+    
+    if (pickBtn && picker && pickerGrid && pickerPager) {
+      async function loadSlideMedia(page=1) {
+        const data = await api('GET', `/api/admin/media?page=${page}&limit=24`);
+        pickerGrid.innerHTML = '';
+        data.items.forEach(it => {
+          const btn = document.createElement('button');
+          btn.className = 'btn ghost';
+          btn.style.display = 'block';
+          btn.style.padding = '0';
+          btn.style.borderRadius = '12px';
+          btn.style.overflow = 'hidden';
+          btn.style.border = '1px solid #e5e7eb';
+          btn.style.background = '#fff';
+          btn.innerHTML = `<img src="${it.file_path}" alt="" style="width:100%;height:120px;object-fit:cover"><div style="padding:8px 10px;font-size:12px;color:#374151;">${it.file_name}</div>`;
+          btn.addEventListener('click', () => {
+            form.querySelector('[name="media_id"]').value = it.id || '';
+            picker.style.display = 'none';
+          });
+          pickerGrid.appendChild(btn);
+        });
+        pickerPager.innerHTML = '';
+        const totalPages = Math.ceil(data.total / data.limit);
+        for (let i=1; i<=totalPages; i++) {
+          const a = document.createElement('a');
+          a.href = '#';
+          a.textContent = i;
+          a.className = 'btn ghost';
+          a.style.padding = '6px 10px';
+          a.style.borderRadius = '8px';
+          if (i === data.page) a.style.background = '#111827', a.style.color = '#fff';
+          a.addEventListener('click', (e) => { e.preventDefault(); loadSlideMedia(i); });
+          pickerPager.appendChild(a);
+        }
+      }
+      pickBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        picker.style.display = 'flex';
+        loadSlideMedia(1);
+      });
+    }
   }
 
   // COURSES & MATERIALS on dashboard

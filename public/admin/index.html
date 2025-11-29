@@ -22,6 +22,7 @@
             <div><label>Media</label>
               <div class="row">
                 <input name="media_id" type="number" placeholder="Media ID" style="max-width:140px">
+                <button type="button" class="ghost" id="slide-pick-btn">選擇</button>
                 <button type="button" class="ghost" id="slide-upload-btn">上傳</button>
                 <input type="file" id="slide-upload-file" accept="image/*" style="display:none">
               </div>
@@ -37,6 +38,17 @@
     </div>
   </main>
   
+  <!-- Media Picker Modal for Slides -->
+  <div id="slide-picker" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1000;overflow-y:auto;padding:40px 20px;">
+    <div style="max-width:1200px;margin:0 auto;background:#fff;border-radius:16px;padding:24px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+        <h2>選擇圖片</h2>
+        <button class="btn ghost" onclick="document.getElementById('slide-picker').style.display='none'">關閉</button>
+      </div>
+      <div id="slide-picker-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:16px;margin-bottom:20px;"></div>
+      <div id="slide-picker-pager" style="text-align:center;"></div>
+    </div>
+  </div>
 </body>
 </html>
 
