@@ -343,7 +343,7 @@
   async function initServicesEditors() {
       await setupPageEditor('scourses', 'service-courses', '音樂課程');
       await setupPageEditor('scommercial', 'service-commercial', '商業演出');
-      await setupPageEditor('ssales', 'service-sales', '樂器販售');
+      // Note: 'service-sales' (樂器販售) is now managed separately in /admin/products.html
       await setupPageEditor('sspace', 'service-space', '共享與藝術空間');
       await setupPageEditor('stourism', 'service-tourism', '音樂觀光體驗');
       
