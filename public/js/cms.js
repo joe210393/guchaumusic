@@ -317,8 +317,22 @@
                       const pageData = await fetchJson(`/api/public/pages/${sec.slug}`);
                       const plain = (pageData.content_html || '').replace(/<[^>]+>/g, '');
                       p.textContent = plain.slice(0, 150) + (plain.length > 150 ? '...' : '');
-                      if (img && pageData.background_image_url) img.src = pageData.background_image_url;
-                      else if (img) img.style.display = 'none';
+                      // Set image - use background_image_url if available, otherwise use default placeholder
+                      if (img) {
+                          if (pageData.background_image_url) {
+                              img.src = pageData.background_image_url;
+                          } else {
+                              // Use default placeholder image based on service type
+                              const defaultImages = {
+                                  'service-courses': 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjBmNGY4Ii8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIyNCIgZmlsbD0iIzY2NiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPuaXoOWbvueJhzwvdGV4dD48L3N2Zz4=',
+                                  'service-commercial': 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZWZmNGY0Ii8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIyNCIgZmlsbD0iIzY2NiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPuWKoOWbvueJhzwvdGV4dD48L3N2Zz4=',
+                                  'service-sales': 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZTVmNWZiIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIyNCIgZmlsbD0iIzY2NiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPuaXoOWbvueJhzwvdGV4dD48L3N2Zz4=',
+                                  'service-space': 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjBmOWZmIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIyNCIgZmlsbD0iIzY2NiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPuaXoOWbvueJhzwvdGV4dD48L3N2Zz4=',
+                                  'service-tourism': 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZTVmN2ZmIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIyNCIgZmlsbD0iIzY2NiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPuaXoOWbvueJhzwvdGV4dD48L3N2Zz4='
+                              };
+                              img.src = defaultImages[sec.slug] || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjVmN2ZhIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIyNCIgZmlsbD0iIzY2NiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPuaXoOWbvueJhzwvdGV4dD48L3N2Zz4=';
+                          }
+                      }
                   } catch { p.textContent = 'Loading...'; }
               } else {
                   // List type (News / Media) - fetch latest item
@@ -375,46 +389,32 @@
                 if (!url) return '';
                 try {
                     const u = new URL(url);
-                    // YouTube handling - comply with YouTube IFrame Player API documentation
-                    if (u.hostname.includes('youtube.com') || u.hostname.includes('youtu.be') || u.hostname.includes('youtube-nocookie.com')) {
+                    // YouTube handling only - simplified to avoid error 153
+                    if (u.hostname.includes('youtube.com') || u.hostname.includes('youtu.be')) {
                         let vid = null;
                         // Handle different YouTube URL formats
                         if (u.hostname === 'youtu.be' || u.hostname.includes('youtu.be')) {
-                            // https://youtu.be/VIDEO_ID
                             vid = u.pathname.replace(/^\//, '').split('/')[0].split('?')[0];
                         } else if (u.pathname.includes('/embed/')) {
-                            // https://www.youtube.com/embed/VIDEO_ID
                             vid = u.pathname.split('/embed/')[1].split('?')[0];
                         } else if (u.pathname.includes('/v/')) {
-                            // https://www.youtube.com/v/VIDEO_ID
                             vid = u.pathname.split('/v/')[1].split('?')[0];
                         } else if (u.pathname.includes('/shorts/')) {
-                            // https://www.youtube.com/shorts/VIDEO_ID
                             vid = u.pathname.split('/shorts/')[1].split('?')[0];
                         } else {
-                            // https://www.youtube.com/watch?v=VIDEO_ID
                             vid = u.searchParams.get('v');
                         }
-                        // Clean video ID (remove any extra parameters)
+                        // Clean video ID
                         if (vid) {
                             vid = vid.split('&')[0].split('#')[0].trim();
                             // Validate video ID format (YouTube video IDs are 11 characters)
                             if (vid && /^[a-zA-Z0-9_-]{11}$/.test(vid)) {
-                                // Get origin for security (as per YouTube API documentation)
-                                const origin = window.location.origin || window.location.protocol + '//' + window.location.host;
-                                // Use youtube-nocookie.com for privacy compliance
-                                // Add enablejsapi=1 as required by IFrame Player API
-                                // Add origin parameter for security (prevents malicious third-party JavaScript)
-                                // Add rel=0 to not show related videos, modestbranding=1 to reduce YouTube branding
-                                const embedUrl = `https://www.youtube-nocookie.com/embed/${vid}?enablejsapi=1&origin=${encodeURIComponent(origin)}&rel=0&modestbranding=1`;
+                                // Simple embed URL without origin parameter to avoid error 153
+                                // Use standard youtube.com/embed format
+                                const embedUrl = `https://www.youtube.com/embed/${vid}?rel=0&modestbranding=1`;
                                 return `<div class="video-wrapper" style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;max-width:100%;background:#000;border-radius:8px;margin-bottom:16px;"><iframe src="${embedUrl}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen style="position:absolute;top:0;left:0;width:100%;height:100%;" loading="lazy"></iframe></div>`;
                             }
                         }
-                    }
-                    // Facebook handling
-                    if (u.hostname.includes('facebook.com')) {
-                        const encoded = encodeURIComponent(url);
-                        return `<div class="fb-wrapper" style="margin-bottom:16px;"><iframe src="https://www.facebook.com/plugins/post.php?href=${encoded}&width=500&show_text=true&height=500&appId" width="100%" height="500" style="border:none;overflow:hidden;border-radius:8px;" scrolling="no" frameborder="0" allowfullscreen="true" allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share" loading="lazy"></iframe></div>`;
                     }
                 } catch (err) {
                     console.error('[Frontend] Error parsing embed URL:', url, err);
@@ -520,8 +520,8 @@
             if (!url) return '';
             try {
                 const u = new URL(url);
-                // YouTube handling - comply with YouTube IFrame Player API documentation
-                if (u.hostname.includes('youtube.com') || u.hostname.includes('youtu.be') || u.hostname.includes('youtube-nocookie.com')) {
+                // YouTube handling only - simplified to avoid error 153
+                if (u.hostname.includes('youtube.com') || u.hostname.includes('youtu.be')) {
                     let vid = null;
                     if (u.hostname === 'youtu.be' || u.hostname.includes('youtu.be')) {
                         vid = u.pathname.replace(/^\//, '').split('/')[0].split('?')[0];
@@ -536,22 +536,13 @@
                     }
                     if (vid) {
                         vid = vid.split('&')[0].split('#')[0].trim();
-                        // Validate video ID format (YouTube video IDs are 11 characters)
+                        // Validate video ID format
                         if (vid && /^[a-zA-Z0-9_-]{11}$/.test(vid)) {
-                            // Get origin for security (as per YouTube API documentation)
-                            const origin = window.location.origin || window.location.protocol + '//' + window.location.host;
-                            // Use youtube-nocookie.com for privacy compliance
-                            // Add enablejsapi=1 as required by IFrame Player API
-                            // Add origin parameter for security (prevents malicious third-party JavaScript)
-                            // Add rel=0 to not show related videos, modestbranding=1 to reduce YouTube branding
-                            const embedUrl = `https://www.youtube-nocookie.com/embed/${vid}?enablejsapi=1&origin=${encodeURIComponent(origin)}&rel=0&modestbranding=1`;
+                            // Simple embed URL without origin parameter to avoid error 153
+                            const embedUrl = `https://www.youtube.com/embed/${vid}?rel=0&modestbranding=1`;
                             return `<div class="video-wrapper" style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;max-width:100%;background:#000;border-radius:12px;margin-bottom:24px;"><iframe src="${embedUrl}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen style="position:absolute;top:0;left:0;width:100%;height:100%;" loading="lazy"></iframe></div>`;
                         }
                     }
-                }
-                if (u.hostname.includes('facebook.com')) {
-                    const encoded = encodeURIComponent(url);
-                    return `<div class="fb-wrapper" style="margin-bottom:24px;"><iframe src="https://www.facebook.com/plugins/post.php?href=${encoded}&width=750&show_text=true&height=600&appId" width="100%" height="600" style="border:none;overflow:hidden;border-radius:12px;" scrolling="no" frameborder="0" allowfullscreen="true" allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share" loading="lazy"></iframe></div>`;
                 }
             } catch (err) {
                 console.error('[Frontend] Error parsing embed URL:', url, err);
