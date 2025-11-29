@@ -688,20 +688,28 @@
       if (e.target.dataset.edit){ 
         const r=rows.find(x=> String(x.id)===String(id)); 
         if (!r) return; 
-        document.getElementById('news-title').value=r.title||''; 
-        document.getElementById('news-slug').value=r.slug||''; 
-        document.getElementById('news-excerpt').value=r.excerpt||''; 
-        editor.innerHTML=r.content_html||''; 
-        document.getElementById('news-cover').value=r.cover_media_id||''; 
+        
+        // Load all fields, ensuring they are properly set
+        document.getElementById('news-title').value = String(r.title || '').trim(); 
+        document.getElementById('news-slug').value = String(r.slug || '').trim(); 
+        document.getElementById('news-excerpt').value = String(r.excerpt || ''); 
+        editor.innerHTML = String(r.content_html || ''); 
+        document.getElementById('news-cover').value = r.cover_media_id ? String(r.cover_media_id) : ''; 
+        
         // Convert SQL datetime to datetime-local format if needed
         if (r.published_at) {
-          const pubDate = r.published_at.replace(' ', 'T').slice(0, 16);
+          const pubDate = String(r.published_at).replace(' ', 'T').slice(0, 16);
           document.getElementById('news-published').value = pubDate;
         } else {
           document.getElementById('news-published').value = '';
         }
-        document.getElementById('news-published-flag').checked=!!r.is_published; 
-        form.querySelector('[name="id"]').value=r.id; 
+        
+        // Set is_published checkbox
+        const isPublished = (r.is_published === 1 || r.is_published === '1' || r.is_published === true);
+        document.getElementById('news-published-flag').checked = isPublished; 
+        
+        // Set the hidden id field
+        form.querySelector('[name="id"]').value = String(r.id); 
       } else if (e.target.dataset.del){ 
         if (!confirm('確定刪除？')) return; 
         await api('DELETE', `/api/admin/news/${id}`); 
@@ -710,29 +718,60 @@
     });
     form.addEventListener('submit', async (e)=>{ 
       e.preventDefault(); 
-      const fd=new FormData(form); 
-      const data=Object.fromEntries(fd.entries());
-      data.excerpt=document.getElementById('news-excerpt').value;
-      data.content_html=editor.innerHTML;
-      data.cover_media_id=document.getElementById('news-cover').value||null;
-      // Convert datetime-local to SQL format if needed, or use as-is if already in SQL format
-      const pubDateInput = document.getElementById('news-published');
-      if (pubDateInput && pubDateInput.value) {
-        // If it's datetime-local format (contains T), convert it
-        if (pubDateInput.value.includes('T')) {
-          data.published_at = pubDateInput.value.replace('T', ' ') + ':00';
-        } else {
-          data.published_at = pubDateInput.value;
+      try {
+        const fd=new FormData(form); 
+        const data=Object.fromEntries(fd.entries());
+        
+        // Validate required fields
+        if (!data.title || !data.title.trim()) {
+          alert('請輸入標題');
+          return;
         }
-      } else {
-        data.published_at = null;
+        if (!data.slug || !data.slug.trim()) {
+          alert('請輸入 Slug');
+          return;
+        }
+        
+        data.title = String(data.title).trim();
+        data.slug = String(data.slug).trim();
+        data.excerpt = document.getElementById('news-excerpt').value || '';
+        data.content_html = editor.innerHTML || '';
+        data.cover_media_id = document.getElementById('news-cover').value || null;
+        if (data.cover_media_id) {
+          data.cover_media_id = parseInt(data.cover_media_id) || null;
+        }
+        
+        // Convert datetime-local to SQL format if needed, or use as-is if already in SQL format
+        const pubDateInput = document.getElementById('news-published');
+        if (pubDateInput && pubDateInput.value) {
+          // If it's datetime-local format (contains T), convert it
+          if (pubDateInput.value.includes('T')) {
+            data.published_at = pubDateInput.value.replace('T', ' ') + ':00';
+          } else {
+            data.published_at = pubDateInput.value;
+          }
+        } else {
+          data.published_at = null;
+        }
+        // Explicitly set is_published from checkbox
+        const pubFlag = document.getElementById('news-published-flag');
+        data.is_published = (pubFlag && pubFlag.checked) ? 1 : 0;
+        
+        const id = data.id; 
+        delete data.id;
+        
+        if (id) {
+          await api('PUT', `/api/admin/news/${id}`, data);
+        } else {
+          await api('POST', '/api/admin/news', data);
+        }
+        
+        alert('儲存成功');
+        location.reload();
+      } catch (err) {
+        console.error('Error saving news:', err);
+        alert('儲存失敗：' + (err.message || '未知錯誤'));
       }
-      // Explicitly set is_published from checkbox
-      const pubFlag = document.getElementById('news-published-flag');
-      data.is_published = (pubFlag && pubFlag.checked) ? 1 : 0;
-      const id=data.id; delete data.id;
-      if (id) await api('PUT', `/api/admin/news/${id}`, data); else await api('POST', '/api/admin/news', data);
-      location.reload();
     });
   }
 

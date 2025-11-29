@@ -314,21 +314,92 @@ apiAdminRouter.get('/news', requireAuth, async (_req, res) => {
   res.json(rows);
 });
 apiAdminRouter.post('/news', requireAuth, async (req, res) => {
-  const { title, slug, content_html, excerpt, cover_media_id, published_at, is_published } = req.body || {};
-  const pubValue = (is_published === 1 || is_published === '1' || is_published === true) ? 1 : 0;
-  await query('INSERT INTO news(title, slug, content_html, excerpt, cover_media_id, published_at, is_published) VALUES (?,?,?,?,?,?,?)', [
-    String(title), String(slug), sanitizeContent(content_html), String(excerpt || ''), cover_media_id || null, published_at || null, pubValue
-  ]);
-  res.json({ ok: true });
+  try {
+    const { title, slug, content_html, excerpt, cover_media_id, published_at, is_published } = req.body || {};
+    
+    // Validate required fields
+    if (!title || !String(title).trim()) {
+      return res.status(400).json({ error: 'Title is required' });
+    }
+    if (!slug || !String(slug).trim()) {
+      return res.status(400).json({ error: 'Slug is required' });
+    }
+    
+    // Check if slug already exists
+    const existing = await query('SELECT id FROM news WHERE slug = ?', [String(slug).trim()]);
+    if (existing && existing.length > 0) {
+      return res.status(400).json({ error: 'Slug already exists' });
+    }
+    
+    const pubValue = (is_published === 1 || is_published === '1' || is_published === true) ? 1 : 0;
+    const sanitizedContent = sanitizeContent(content_html || '');
+    
+    await query('INSERT INTO news(title, slug, content_html, excerpt, cover_media_id, published_at, is_published) VALUES (?,?,?,?,?,?,?)', [
+      String(title).trim(), 
+      String(slug).trim(), 
+      sanitizedContent, 
+      String(excerpt || ''), 
+      cover_media_id ? parseInt(cover_media_id) : null, 
+      published_at || null, 
+      pubValue
+    ]);
+    
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('[POST /api/admin/news] Error:', err);
+    if (err.message && err.message.includes('UNIQUE constraint')) {
+      return res.status(400).json({ error: 'Slug already exists' });
+    }
+    res.status(500).json({ error: 'Internal Server Error', details: err.message });
+  }
 });
 apiAdminRouter.put('/news/:id', requireAuth, async (req, res) => {
-  const { id } = req.params;
-  const { title, slug, content_html, excerpt, cover_media_id, published_at, is_published } = req.body || {};
-  const pubValue = (is_published === 1 || is_published === '1' || is_published === true) ? 1 : 0;
-  await query('UPDATE news SET title=?, slug=?, content_html=?, excerpt=?, cover_media_id=?, published_at=?, is_published=? WHERE id=?', [
-    String(title), String(slug), sanitizeContent(content_html), String(excerpt || ''), cover_media_id || null, published_at || null, pubValue, id
-  ]);
-  res.json({ ok: true });
+  try {
+    const { id } = req.params;
+    const { title, slug, content_html, excerpt, cover_media_id, published_at, is_published } = req.body || {};
+    
+    // Validate required fields
+    if (!title || !String(title).trim()) {
+      return res.status(400).json({ error: 'Title is required' });
+    }
+    if (!slug || !String(slug).trim()) {
+      return res.status(400).json({ error: 'Slug is required' });
+    }
+    
+    // Check if slug already exists for another news item
+    const existing = await query('SELECT id FROM news WHERE slug = ? AND id != ?', [String(slug).trim(), id]);
+    if (existing && existing.length > 0) {
+      return res.status(400).json({ error: 'Slug already exists' });
+    }
+    
+    // Verify the news item exists
+    const newsItem = await query('SELECT id FROM news WHERE id = ?', [id]);
+    if (!newsItem || newsItem.length === 0) {
+      return res.status(404).json({ error: 'News item not found' });
+    }
+    
+    const pubValue = (is_published === 1 || is_published === '1' || is_published === true) ? 1 : 0;
+    const sanitizedContent = sanitizeContent(content_html || '');
+    
+    await query('UPDATE news SET title=?, slug=?, content_html=?, excerpt=?, cover_media_id=?, published_at=?, is_published=? WHERE id=?', [
+      String(title).trim(), 
+      String(slug).trim(), 
+      sanitizedContent, 
+      String(excerpt || ''), 
+      cover_media_id ? parseInt(cover_media_id) : null, 
+      published_at || null, 
+      pubValue, 
+      id
+    ]);
+    
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('[PUT /api/admin/news/:id] Error:', err);
+    if (err.message && err.message.includes('UNIQUE constraint')) {
+      return res.status(400).json({ error: 'Slug already exists' });
+    }
+    res.status(500).json({ error: 'Internal Server Error', details: err.message });
+  }
 });
 apiAdminRouter.delete('/news/:id', requireAuth, async (req, res) => {
   await query('DELETE FROM news WHERE id=?', [req.params.id]);
