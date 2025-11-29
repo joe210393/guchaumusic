@@ -2205,7 +2205,8 @@
         const typeNames = { course: '音樂課程', performance: '商業演出', space: '共享空間' };
         const typeColors = { course: '#4A90E2', performance: '#E94B3C', space: '#7B68EE' };
         
-        container.innerHTML = registrations.map(reg => {
+        container.innerHTML = '';
+        registrations.forEach(reg => {
           const date = new Date(reg.event_date);
           const formattedDate = `${date.getFullYear()}/${date.getMonth() + 1}/${date.getDate()}`;
           const timeStr = reg.start_time ? ` ${reg.start_time}` : '';
@@ -2222,35 +2223,46 @@
             'pending': '待處理'
           };
           
-          return `
-            <div style="padding:12px;border-bottom:1px solid #e5e7eb;transition:background 0.2s;" 
-                 onmouseover="this.style.background='#f9fafb'" 
-                 onmouseout="this.style.background='transparent'">
-              <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:8px;">
-                <div style="flex:1;">
-                  <div style="font-weight:600;font-size:14px;margin-bottom:4px;color:#111827;">
-                    ${reg.name || '未提供姓名'}
-                  </div>
-                  <div style="font-size:12px;color:#666;margin-bottom:2px;">
-                    ${reg.event_title || '未命名活動'}
-                  </div>
-                  <div style="font-size:12px;color:#666;">
-                    ${formattedDate}${timeStr}
-                  </div>
+          const item = document.createElement('div');
+          item.style.padding = '12px';
+          item.style.borderBottom = '1px solid #e5e7eb';
+          item.style.transition = 'background 0.2s';
+          item.style.cursor = 'default';
+          
+          item.addEventListener('mouseenter', () => {
+            item.style.background = '#f9fafb';
+          });
+          item.addEventListener('mouseleave', () => {
+            item.style.background = 'transparent';
+          });
+          
+          item.innerHTML = `
+            <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:8px;">
+              <div style="flex:1;">
+                <div style="font-weight:600;font-size:14px;margin-bottom:4px;color:#111827;">
+                  ${reg.name || '未提供姓名'}
                 </div>
-                <span style="display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:500;background:${statusColors[reg.status] || '#999'};color:#fff;">
-                  ${statusNames[reg.status] || reg.status}
-                </span>
+                <div style="font-size:12px;color:#666;margin-bottom:2px;">
+                  ${reg.event_title || '未命名活動'}
+                </div>
+                <div style="font-size:12px;color:#666;">
+                  ${formattedDate}${timeStr}
+                </div>
               </div>
-              <div style="display:flex;align-items:center;gap:4px;margin-top:8px;">
-                <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${typeColors[reg.event_type] || '#999'};"></span>
-                <span style="font-size:11px;color:#666;">${typeNames[reg.event_type] || reg.event_type}</span>
-              </div>
-              ${reg.phone_mobile ? `<div style="font-size:11px;color:#666;margin-top:4px;">📞 ${reg.phone_mobile}</div>` : ''}
-              ${reg.email ? `<div style="font-size:11px;color:#666;">✉️ ${reg.email}</div>` : ''}
+              <span style="display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:500;background:${statusColors[reg.status] || '#999'};color:#fff;">
+                ${statusNames[reg.status] || reg.status}
+              </span>
             </div>
+            <div style="display:flex;align-items:center;gap:4px;margin-top:8px;">
+              <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${typeColors[reg.event_type] || '#999'};"></span>
+              <span style="font-size:11px;color:#666;">${typeNames[reg.event_type] || reg.event_type}</span>
+            </div>
+            ${reg.phone_mobile ? `<div style="font-size:11px;color:#666;margin-top:4px;">📞 ${reg.phone_mobile}</div>` : ''}
+            ${reg.email ? `<div style="font-size:11px;color:#666;">✉️ ${reg.email}</div>` : ''}
           `;
-        }).join('');
+          
+          container.appendChild(item);
+        });
       } catch (err) {
         console.error('Error loading latest registrations:', err);
         container.innerHTML = '<div style="text-align:center;padding:40px 20px;color:#c00;">載入失敗</div>';
