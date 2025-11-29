@@ -479,16 +479,16 @@
             dayEl.style.cursor = 'default';
             
             dayEl.innerHTML = `
-              <div style="font-size:14px;margin-bottom:4px;">${renderDate.getDate()}</div>
+              <div style="font-size:16px;font-weight:700;margin-bottom:4px;">${renderDate.getDate()}</div>
               <div style="display:flex;flex-direction:column;gap:2px;width:100%;align-items:center;">
                 ${dayEvents.slice(0, 2).map(e => {
                   const colors = { course: '#4A90E2', performance: '#E94B3C', space: '#7B68EE' };
                   return `<div style="display:flex;align-items:center;gap:2px;width:100%;justify-content:center;">
                     <span style="width:6px;height:6px;border-radius:50%;background:${colors[e.event_type] || '#999'};display:inline-block;"></span>
-                    <span style="font-size:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:60px;">${e.title || ''}</span>
+                    <span style="font-size:12px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:60px;">${e.title || ''}</span>
                   </div>`;
                 }).join('')}
-                ${dayEvents.length > 2 ? `<div style="font-size:10px;color:#666;">+${dayEvents.length - 2}</div>` : ''}
+                ${dayEvents.length > 2 ? `<div style="font-size:12px;font-weight:600;color:#666;">+${dayEvents.length - 2}</div>` : ''}
               </div>
             `;
             
