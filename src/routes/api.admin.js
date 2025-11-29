@@ -979,4 +979,20 @@ apiAdminRouter.get('/events/:id/registrations', requireAuth, async (req, res) =>
   res.json(rows);
 });
 
+// 獲取最新報名記錄（後台，用於側邊欄顯示）
+apiAdminRouter.get('/events/registrations/latest', requireAuth, async (req, res) => {
+  const limit = Math.min(20, Math.max(1, Number(req.query.limit || 10)));
+  const rows = await query(`
+    SELECT er.*, 
+           m.name, m.email, m.phone_mobile,
+           e.title AS event_title, e.event_date, e.event_type, e.start_time
+    FROM event_registrations er
+    JOIN members m ON m.id = er.member_id
+    JOIN events e ON e.id = er.event_id
+    ORDER BY er.created_at DESC
+    LIMIT ?
+  `, [limit]);
+  res.json(rows);
+});
+
 

@@ -13,6 +13,8 @@
   <main class="container" style="padding:24px;">
     <h1>預約報名管理</h1>
     
+    <div style="display:grid;grid-template-columns:1fr 320px;gap:24px;align-items:start;">
+      <div>
     <div class="card" style="margin-bottom:24px;">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
         <h2 style="margin:0;">月曆視圖</h2>
@@ -101,6 +103,16 @@
         </thead>
         <tbody id="events-tbody"></tbody>
       </table>
+    </div>
+      </div>
+      
+      <!-- 側邊欄：最新預約訊息 -->
+      <div class="card" style="position:sticky;top:80px;">
+        <h2 style="margin:0 0 16px 0;font-size:18px;">最新預約</h2>
+        <div id="latest-registrations" style="max-height:600px;overflow-y:auto;">
+          <div style="text-align:center;padding:40px 20px;color:#999;">載入中...</div>
+        </div>
+      </div>
     </div>
     
     <!-- Event Form Modal -->
