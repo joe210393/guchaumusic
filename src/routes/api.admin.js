@@ -321,6 +321,11 @@ apiAdminRouter.delete('/news/:id', requireAuth, async (req, res) => {
 // 影像紀錄 CRUD
 apiAdminRouter.get('/media-records', requireAuth, async (_req, res) => {
   const rows = await query('SELECT * FROM media_records ORDER BY id DESC');
+  // Debug: log the is_published values
+  console.log('[GET /api/admin/media-records] Found', rows.length, 'records');
+  rows.forEach(r => {
+    console.log(`  - ID ${r.id}: "${r.title}" - is_published: ${r.is_published} (type: ${typeof r.is_published})`);
+  });
   res.json(rows);
 });
 apiAdminRouter.post('/media-records', requireAuth, async (req, res) => {

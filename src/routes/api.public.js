@@ -133,6 +133,13 @@ apiPublicRouter.get('/media-records', async (req, res) => {
   );
   const [{ cnt }] = await query(`SELECT COUNT(1) AS cnt FROM media_records m ${whereSql}`, params);
   console.log('[GET /media-records] Found', items.length, 'items, total:', cnt);
+  console.log('[GET /media-records] WHERE clause:', whereSql);
+  console.log('[GET /media-records] Sample items:', items.slice(0, 2).map(i => ({ id: i.id, title: i.title, is_published: 'N/A (not in SELECT)' })));
+  
+  // Debug: Also check raw database values
+  const debugRows = await query('SELECT id, title, is_published FROM media_records ORDER BY id DESC LIMIT 5');
+  console.log('[GET /media-records] Debug - Raw DB values:', debugRows);
+  
   res.json({ items, page, limit, total: cnt });
 });
 
