@@ -1095,6 +1095,30 @@
         return;
       }
       
+      // Setup contact button (購買請電洽)
+      const contactBtn = q('#contact-buy-btn');
+      if (contactBtn) {
+        // Detect if mobile device
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || 
+                        (window.innerWidth <= 768 && 'ontouchstart' in window);
+        
+        if (isMobile) {
+          // Mobile: Use tel: link
+          contactBtn.href = 'tel:039964996';
+          contactBtn.addEventListener('click', (e) => {
+            // Allow default tel: behavior
+          });
+        } else {
+          // Desktop/Tablet: Jump to LINE
+          // Get LINE URL from settings or use default
+          const lineFloat = q('#line-float');
+          const lineUrl = lineFloat ? lineFloat.href : 'https://line.me/R/ti/p/@guchaumusic';
+          contactBtn.href = lineUrl;
+          contactBtn.target = '_blank';
+          contactBtn.rel = 'noopener';
+        }
+      }
+      
       try {
         const product = await fetchJson(`/api/public/products/${encodeURIComponent(slug)}`);
         
