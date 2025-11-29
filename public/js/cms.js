@@ -1420,8 +1420,19 @@
           if (res.ok && data.ok) {
             btn.textContent = '已報名 ✓';
             btn.style.background = '#10b981';
+            btn.style.color = '#fff';
+            btn.style.cursor = 'not-allowed';
             btn.disabled = true;
+            btn.classList.remove('interested-btn'); // 移除類別，防止再次點擊
             alert('報名成功！工作人員將與您聯繫確認。');
+            // 重新載入該日期的活動以更新狀態
+            const dateStr = new Date(eventDateLabel.textContent.replace(/年|月/g, '/').replace(/日/g, '')).toISOString().split('T')[0];
+            try {
+              const dateEvents = await fetchJson(`/api/public/events?date=${dateStr}`);
+              showEventDetail(dateStr, dateEvents);
+            } catch (err) {
+              console.error('Error reloading events:', err);
+            }
           } else {
             throw new Error(data.error || '報名失敗');
           }
