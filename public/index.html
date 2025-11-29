@@ -10,11 +10,66 @@
     header, footer { padding: 16px; background: rgba(255,255,255,.8); backdrop-filter: blur(8px); }
     .container { max-width: 1080px; margin: 0 auto; padding: 16px; }
     #hero { padding: 0; text-align:center; }
-    .grid { display:grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap:24px; }
-    .card { background:#fff; border-radius:12px; box-shadow:0 6px 20px rgba(0,0,0,.06); padding:24px; display:flex; flex-direction:column; }
-    .card h3 { margin-top:0; margin-bottom:12px; font-size:1.5rem; }
-    .card p { flex:1; color:#555; line-height:1.6; overflow:hidden; display:-webkit-box; -webkit-line-clamp:5; -webkit-box-orient:vertical; margin-bottom:16px; }
-    .card .actions { text-align:right; }
+    
+    /* Card Grid Layout */
+    .grid { 
+      display:grid; 
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); 
+      gap:24px; 
+    }
+    
+    .card { 
+      background:#fff; 
+      border-radius:24px; 
+      box-shadow:0 10px 30px rgba(0,0,0,0.05); 
+      padding:32px; 
+      display:flex; 
+      flex-direction:column; 
+      text-align: center;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    
+    .card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+    }
+
+    .card-img-container {
+        width: 100%;
+        height: 180px;
+        margin-bottom: 20px;
+        border-radius: 16px;
+        overflow: hidden;
+    }
+    
+    .card-img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .card h3 { 
+      margin-top:0; 
+      margin-bottom:12px; 
+      font-size:1.5rem; 
+      color: #333;
+    }
+    
+    .card p { 
+      flex:1; 
+      color:#666; 
+      line-height:1.6; 
+      overflow:hidden; 
+      display:-webkit-box; 
+      -webkit-line-clamp:4; 
+      -webkit-box-orient:vertical; 
+      margin-bottom:24px; 
+    }
+    
+    .card .actions { 
+      text-align:right; 
+    }
+    
     .line-float { position: fixed; right: 16px; bottom: 16px; width: 56px; height: 56px; border-radius: 50%; background: #06C755; color: #fff; display:flex; align-items:center; justify-content:center; text-decoration:none; font-weight:700; box-shadow:0 10px 24px rgba(0,0,0,.2); }
   </style>
   <script defer src="/js/cms.js"></script>
@@ -46,6 +101,9 @@
 
   <template id="home-card-tpl">
     <article class="card">
+      <div class="card-img-container">
+          <img data-prop="src:cover_url" class="card-img" alt="" onerror="this.style.display='none'">
+      </div>
       <h3 data-prop="text:title"></h3>
       <p data-prop="text:excerpt"></p>
       <div class="actions">

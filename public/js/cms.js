@@ -306,6 +306,7 @@
               const h3 = node.querySelector('h3');
               const p = node.querySelector('p');
               const a = node.querySelector('a');
+              const img = node.querySelector('img');
               
               h3.textContent = sec.title;
               
@@ -316,6 +317,8 @@
                       const pageData = await fetchJson(`/api/public/pages/${sec.slug}`);
                       const plain = (pageData.content_html || '').replace(/<[^>]+>/g, '');
                       p.textContent = plain.slice(0, 150) + (plain.length > 150 ? '...' : '');
+                      if (img && pageData.background_image_url) img.src = pageData.background_image_url;
+                      else if (img) img.style.display = 'none';
                   } catch { p.textContent = 'Loading...'; }
               } else {
                   // List type (News / Media) - fetch latest item
@@ -327,8 +330,11 @@
                           const item = listData.items[0];
                           const plain = (item.excerpt || item.content_html || '').replace(/<[^>]+>/g, '');
                           p.textContent = plain.slice(0, 150) + (plain.length > 150 ? '...' : '');
+                          if (img && item.cover_url) img.src = item.cover_url;
+                          else if (img) img.style.display = 'none';
                       } else {
                           p.textContent = '暫無內容';
+                          if (img) img.style.display = 'none';
                       }
                   } catch { p.textContent = '...'; }
               }
