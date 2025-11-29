@@ -280,7 +280,7 @@ apiPublicRouter.get('/events', async (req, res) => {
     whereClause += ' AND e.event_date = ?';
     params.push(String(date));
   } else if (year && month) {
-    whereClause += ' AND strftime("%Y", e.event_date) = ? AND strftime("%m", e.event_date) = ?';
+    whereClause += ' AND strftime(\'%Y\', e.event_date) = ? AND strftime(\'%m\', e.event_date) = ?';
     params.push(String(year), String(month).padStart(2, '0'));
   }
   

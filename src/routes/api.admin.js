@@ -875,7 +875,7 @@ apiAdminRouter.get('/events', requireAuth, async (req, res) => {
     const params = [];
     
     if (year && month) {
-      whereClause += ' AND strftime("%Y", event_date) = ? AND strftime("%m", event_date) = ?';
+      whereClause += ' AND strftime(\'%Y\', event_date) = ? AND strftime(\'%m\', event_date) = ?';
       params.push(String(year), String(month).padStart(2, '0'));
     }
     
