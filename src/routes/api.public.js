@@ -204,6 +204,66 @@ apiPublicRouter.get('/slides', async (_req, res) => {
   res.json(rows);
 });
 
+// 商品類別列表（公開）
+apiPublicRouter.get('/product-categories', async (_req, res) => {
+  const rows = await query('SELECT * FROM product_categories ORDER BY order_index, id');
+  res.json(rows);
+});
+
+// 商品列表（公開，支援類別篩選）
+apiPublicRouter.get('/products', async (req, res) => {
+  const categoryId = req.query.category_id;
+  let rows;
+  if (categoryId) {
+    rows = await query(`
+      SELECT p.id, p.name, p.slug, p.price, p.category_id, c.name AS category_name, m.file_path AS cover_url
+      FROM products p
+      LEFT JOIN product_categories c ON c.id = p.category_id
+      LEFT JOIN media m ON m.id = p.cover_media_id
+      WHERE p.is_published = 1 AND p.category_id = ?
+      ORDER BY p.id DESC
+    `, [categoryId]);
+  } else {
+    rows = await query(`
+      SELECT p.id, p.name, p.slug, p.price, p.category_id, c.name AS category_name, m.file_path AS cover_url
+      FROM products p
+      LEFT JOIN product_categories c ON c.id = p.category_id
+      LEFT JOIN media m ON m.id = p.cover_media_id
+      WHERE p.is_published = 1
+      ORDER BY p.id DESC
+    `);
+  }
+  res.json(rows);
+});
+
+// 商品詳情（公開）
+apiPublicRouter.get('/products/:slug', async (req, res) => {
+  const slug = String(req.params.slug || '').trim();
+  if (!slug) return res.status(404).json({ error: 'Not found' });
+  
+  const rows = await query(`
+    SELECT p.*, c.name AS category_name, m.file_path AS cover_url
+    FROM products p
+    LEFT JOIN product_categories c ON c.id = p.category_id
+    LEFT JOIN media m ON m.id = p.cover_media_id
+    WHERE p.slug = ? AND p.is_published = 1
+    LIMIT 1
+  `, [slug]);
+  
+  if (!rows[0]) return res.status(404).json({ error: 'Not found' });
+  
+  // Get product images
+  const images = await query(`
+    SELECT pi.*, m.file_path, m.file_name
+    FROM product_images pi
+    LEFT JOIN media m ON m.id = pi.media_id
+    WHERE pi.product_id = ?
+    ORDER BY pi.order_index, pi.id
+  `, [rows[0].id]);
+  
+  res.json({ ...rows[0], images });
+});
+
 // 上課內容（YouTube 連結），依會員等級篩選
 apiPublicRouter.get('/courses', async (req, res) => {
   const tierOrder = { free: 0, basic: 1, advanced: 2, platinum: 3 };

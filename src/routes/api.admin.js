@@ -673,4 +673,158 @@ apiAdminRouter.delete('/members/:id/files/:filename', requireEditorOrAdmin, asyn
   res.json({ ok: true });
 });
 
+// ========== 商品類別管理 ==========
+apiAdminRouter.get('/product-categories', requireAuth, async (_req, res) => {
+  const rows = await query('SELECT * FROM product_categories ORDER BY order_index, id');
+  res.json(rows);
+});
+
+apiAdminRouter.post('/product-categories', requireAuth, async (req, res) => {
+  const { name, order_index } = req.body || {};
+  if (!name || !String(name).trim()) return res.status(400).json({ error: 'name required' });
+  const result = await query('INSERT INTO product_categories (name, order_index) VALUES (?, ?)', [String(name).trim(), Number(order_index || 0)]);
+  res.json({ id: result.lastInsertRowid });
+});
+
+apiAdminRouter.put('/product-categories/:id', requireAuth, async (req, res) => {
+  const { name, order_index } = req.body || {};
+  if (!name || !String(name).trim()) return res.status(400).json({ error: 'name required' });
+  await query('UPDATE product_categories SET name=?, order_index=? WHERE id=?', [String(name).trim(), Number(order_index || 0), req.params.id]);
+  res.json({ ok: true });
+});
+
+apiAdminRouter.delete('/product-categories/:id', requireEditorOrAdmin, async (req, res) => {
+  await query('DELETE FROM product_categories WHERE id=?', [req.params.id]);
+  res.json({ ok: true });
+});
+
+// ========== 商品管理 ==========
+apiAdminRouter.get('/products', requireAuth, async (req, res) => {
+  const categoryId = req.query.category_id;
+  let rows;
+  if (categoryId) {
+    rows = await query(`
+      SELECT p.*, c.name AS category_name, m.file_path AS cover_url
+      FROM products p
+      LEFT JOIN product_categories c ON c.id = p.category_id
+      LEFT JOIN media m ON m.id = p.cover_media_id
+      WHERE p.category_id = ?
+      ORDER BY p.id DESC
+    `, [categoryId]);
+  } else {
+    rows = await query(`
+      SELECT p.*, c.name AS category_name, m.file_path AS cover_url
+      FROM products p
+      LEFT JOIN product_categories c ON c.id = p.category_id
+      LEFT JOIN media m ON m.id = p.cover_media_id
+      ORDER BY p.id DESC
+    `);
+  }
+  res.json(rows);
+});
+
+apiAdminRouter.get('/products/:id', requireAuth, async (req, res) => {
+  const rows = await query(`
+    SELECT p.*, c.name AS category_name, m.file_path AS cover_url
+    FROM products p
+    LEFT JOIN product_categories c ON c.id = p.category_id
+    LEFT JOIN media m ON m.id = p.cover_media_id
+    WHERE p.id = ?
+    LIMIT 1
+  `, [req.params.id]);
+  if (!rows[0]) return res.status(404).json({ error: 'Not found' });
+  
+  // Get product images
+  const images = await query(`
+    SELECT pi.*, m.file_path, m.file_name
+    FROM product_images pi
+    LEFT JOIN media m ON m.id = pi.media_id
+    WHERE pi.product_id = ?
+    ORDER BY pi.order_index, pi.id
+  `, [req.params.id]);
+  
+  res.json({ ...rows[0], images });
+});
+
+apiAdminRouter.post('/products', requireAuth, async (req, res) => {
+  const { name, price, category_id, cover_media_id, description_html, is_published, images } = req.body || {};
+  if (!name || !String(name).trim()) return res.status(400).json({ error: 'name required' });
+  if (price === undefined || price === null) return res.status(400).json({ error: 'price required' });
+  
+  // Generate slug from name
+  const slugBase = String(name).trim().toLowerCase().replace(/[^a-z0-9\u4e00-\u9fa5]+/g, '-').replace(/^-+|-+$/g, '');
+  let slug = slugBase;
+  let counter = 1;
+  while (true) {
+    const existing = await query('SELECT id FROM products WHERE slug = ?', [slug]);
+    if (existing.length === 0) break;
+    slug = `${slugBase}-${counter}`;
+    counter++;
+  }
+  
+  const sanitizedHtml = sanitizeContent(description_html || '');
+  const result = await query(
+    'INSERT INTO products (name, slug, price, category_id, cover_media_id, description_html, is_published) VALUES (?, ?, ?, ?, ?, ?, ?)',
+    [String(name).trim(), slug, Number(price), category_id || null, cover_media_id || null, sanitizedHtml, is_published ? 1 : 0]
+  );
+  const productId = result.lastInsertRowid;
+  
+  // Insert product images
+  if (Array.isArray(images) && images.length > 0) {
+    for (let i = 0; i < images.length; i++) {
+      const img = images[i];
+      if (img.media_id) {
+        await query('INSERT INTO product_images (product_id, media_id, order_index) VALUES (?, ?, ?)', [productId, img.media_id, i]);
+      }
+    }
+  }
+  
+  res.json({ id: productId });
+});
+
+apiAdminRouter.put('/products/:id', requireAuth, async (req, res) => {
+  const { name, price, category_id, cover_media_id, description_html, is_published, images } = req.body || {};
+  if (!name || !String(name).trim()) return res.status(400).json({ error: 'name required' });
+  if (price === undefined || price === null) return res.status(400).json({ error: 'price required' });
+  
+  // Update slug if name changed
+  const existing = await query('SELECT slug FROM products WHERE id = ?', [req.params.id]);
+  let slug = existing[0]?.slug;
+  if (!slug || slug !== String(name).trim().toLowerCase().replace(/[^a-z0-9\u4e00-\u9fa5]+/g, '-').replace(/^-+|-+$/g, '')) {
+    const slugBase = String(name).trim().toLowerCase().replace(/[^a-z0-9\u4e00-\u9fa5]+/g, '-').replace(/^-+|-+$/g, '');
+    slug = slugBase;
+    let counter = 1;
+    while (true) {
+      const check = await query('SELECT id FROM products WHERE slug = ? AND id != ?', [slug, req.params.id]);
+      if (check.length === 0) break;
+      slug = `${slugBase}-${counter}`;
+      counter++;
+    }
+  }
+  
+  const sanitizedHtml = sanitizeContent(description_html || '');
+  await query(
+    'UPDATE products SET name=?, slug=?, price=?, category_id=?, cover_media_id=?, description_html=?, is_published=?, updated_at=datetime("now") WHERE id=?',
+    [String(name).trim(), slug, Number(price), category_id || null, cover_media_id || null, sanitizedHtml, is_published ? 1 : 0, req.params.id]
+  );
+  
+  // Update product images (delete all and re-insert)
+  await query('DELETE FROM product_images WHERE product_id = ?', [req.params.id]);
+  if (Array.isArray(images) && images.length > 0) {
+    for (let i = 0; i < images.length; i++) {
+      const img = images[i];
+      if (img.media_id) {
+        await query('INSERT INTO product_images (product_id, media_id, order_index) VALUES (?, ?, ?)', [req.params.id, img.media_id, i]);
+      }
+    }
+  }
+  
+  res.json({ ok: true });
+});
+
+apiAdminRouter.delete('/products/:id', requireEditorOrAdmin, async (req, res) => {
+  await query('DELETE FROM products WHERE id=?', [req.params.id]);
+  res.json({ ok: true });
+});
+
 

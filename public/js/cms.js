@@ -837,6 +837,156 @@
         list.appendChild(card);
       });
       applyBackgroundFromSettings('trial', settings);
+    } else if (page === 'service-sales') {
+      // 商品列表頁
+      const categoryFilter = q('#category-filter');
+      const productsGrid = q('#products-grid');
+      const cardTpl = q('#product-card-tpl');
+      
+      async function loadCategories() {
+        try {
+          const categories = await fetchJson('/api/public/product-categories');
+          if (categoryFilter) {
+            categories.forEach(cat => {
+              const option = document.createElement('option');
+              option.value = cat.id;
+              option.textContent = cat.name;
+              categoryFilter.appendChild(option);
+            });
+          }
+        } catch (err) {
+          console.error('[Frontend] Error loading categories:', err);
+        }
+      }
+      
+      async function loadProducts(categoryId = null) {
+        try {
+          const url = categoryId ? `/api/public/products?category_id=${categoryId}` : '/api/public/products';
+          const products = await fetchJson(url);
+          if (productsGrid && cardTpl) {
+            productsGrid.innerHTML = '';
+            products.forEach(product => {
+              const node = document.importNode(cardTpl.content, true);
+              const card = node.querySelector('.product-card');
+              
+              // Set onclick to navigate to product detail
+              card.onclick = () => {
+                location.href = `/product-detail.html?slug=${encodeURIComponent(product.slug)}`;
+              };
+              
+              // Fill in data
+              qa('[data-prop]', node).forEach(el => {
+                const [attr, path] = el.getAttribute('data-prop').split(':');
+                let value = path.split('.').reduce((o, k) => (o ? o[k] : undefined), product);
+                
+                if (path === 'price') {
+                  value = Number(value || 0).toLocaleString('zh-TW', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+                }
+                
+                if (attr === 'text') {
+                  el.textContent = value ?? '';
+                } else if (attr === 'src') {
+                  el.src = value || '';
+                } else if (attr === 'onclick') {
+                  // Already handled above
+                } else {
+                  el.setAttribute(attr, value ?? '');
+                }
+              });
+              
+              productsGrid.appendChild(node);
+            });
+          }
+        } catch (err) {
+          console.error('[Frontend] Error loading products:', err);
+        }
+      }
+      
+      if (categoryFilter) {
+        categoryFilter.addEventListener('change', (e) => {
+          const categoryId = e.target.value || null;
+          loadProducts(categoryId);
+        });
+      }
+      
+      await loadCategories();
+      await loadProducts();
+      
+      applyBackgroundFromSettings('service-sales', settings);
+    } else if (page === 'product-detail') {
+      // 商品詳情頁
+      const slug = getQueryParam('slug');
+      if (!slug) {
+        console.error('[Frontend] No slug provided');
+        return;
+      }
+      
+      try {
+        const product = await fetchJson(`/api/public/products/${encodeURIComponent(slug)}`);
+        
+        // Set page title
+        if (q('#product-title')) q('#product-title').textContent = product.name || '商品詳情';
+        
+        // Set product name
+        if (q('#product-name')) q('#product-name').textContent = product.name || '';
+        
+        // Set category
+        if (q('#product-category')) {
+          q('#product-category').textContent = product.category_name ? `類別：${product.category_name}` : '';
+        }
+        
+        // Set price
+        if (q('#product-price')) {
+          q('#product-price').textContent = Number(product.price || 0).toLocaleString('zh-TW', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+        }
+        
+        // Set description
+        if (q('#product-description')) {
+          q('#product-description').innerHTML = product.description_html || '';
+        }
+        
+        // Set images
+        const mainImage = q('#product-main-image');
+        const thumbnails = q('#product-thumbnails');
+        const images = product.images || [];
+        
+        if (images.length > 0) {
+          // Set main image
+          if (mainImage) {
+            mainImage.src = images[0].file_path || '';
+            mainImage.style.display = 'block';
+          }
+          
+          // Set thumbnails
+          if (thumbnails) {
+            thumbnails.innerHTML = '';
+            images.forEach((img, index) => {
+              const thumb = document.createElement('img');
+              thumb.className = 'product-thumbnail' + (index === 0 ? ' active' : '');
+              thumb.src = img.file_path || '';
+              thumb.alt = img.file_name || '';
+              thumb.onclick = () => {
+                if (mainImage) {
+                  mainImage.src = img.file_path || '';
+                }
+                qa('.product-thumbnail', thumbnails).forEach(t => t.classList.remove('active'));
+                thumb.classList.add('active');
+              };
+              thumbnails.appendChild(thumb);
+            });
+          }
+        } else if (product.cover_url) {
+          // Use cover image if no product images
+          if (mainImage) {
+            mainImage.src = product.cover_url;
+            mainImage.style.display = 'block';
+          }
+        }
+        
+        applyBackgroundFromSettings('product-detail', settings);
+      } catch (err) {
+        console.error('[Frontend] Error loading product:', err);
+      }
     } else if (page === 'contact') {
       const form = q('#contact-form');
       form?.addEventListener('submit', async (e) => {

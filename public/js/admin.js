@@ -1309,6 +1309,314 @@
     }
   }
 
+  // ========== 商品管理 ==========
+  async function initProducts() {
+    // Categories
+    const catTable = document.getElementById('categories-table');
+    const catForm = document.getElementById('category-form');
+    const catDelete = document.getElementById('category-delete');
+    
+    async function loadCategories() {
+      if (!catTable) return;
+      const rows = await api('GET', '/api/admin/product-categories');
+      const tbody = catTable.querySelector('tbody');
+      tbody.innerHTML = '';
+      rows.forEach(r => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${r.id}</td><td>${r.name}</td><td>${r.order_index}</td><td><button data-edit="${r.id}">編輯</button> <button data-del="${r.id}">刪除</button></td>`;
+        tbody.appendChild(tr);
+      });
+      tbody.addEventListener('click', async (e) => {
+        const id = e.target.dataset.edit || e.target.dataset.del;
+        if (!id) return;
+        if (e.target.dataset.edit) {
+          const rows = await api('GET', '/api/admin/product-categories');
+          const r = rows.find(x => String(x.id) === String(id));
+          if (!r) return;
+          catForm.querySelector('[name="id"]').value = r.id;
+          catForm.querySelector('[name="name"]').value = r.name || '';
+          catForm.querySelector('[name="order_index"]').value = r.order_index || 0;
+        } else if (e.target.dataset.del) {
+          if (!confirm('確定刪除？')) return;
+          await api('DELETE', `/api/admin/product-categories/${id}`);
+          await loadCategories();
+          catForm.reset();
+        }
+      });
+    }
+    
+    if (catForm) {
+      catForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const fd = new FormData(catForm);
+        const data = Object.fromEntries(fd.entries());
+        const id = data.id;
+        delete data.id;
+        if (id) {
+          await api('PUT', `/api/admin/product-categories/${id}`, data);
+        } else {
+          await api('POST', '/api/admin/product-categories', data);
+        }
+        await loadCategories();
+        catForm.reset();
+      });
+    }
+    
+    if (catDelete) {
+      catDelete.addEventListener('click', async () => {
+        const id = catForm.querySelector('[name="id"]').value;
+        if (!id) return;
+        if (!confirm('確定刪除？')) return;
+        await api('DELETE', `/api/admin/product-categories/${id}`);
+        await loadCategories();
+        catForm.reset();
+      });
+    }
+    
+    // Products
+    const prodTable = document.getElementById('products-table');
+    const prodForm = document.getElementById('product-form');
+    const prodDelete = document.getElementById('product-delete');
+    const descEditor = document.getElementById('product-description-editor');
+    const categorySelect = prodForm?.querySelector('[name="category_id"]');
+    const imagesList = document.getElementById('product-images-list');
+    let productImages = [];
+    
+    async function loadCategoriesForSelect() {
+      if (!categorySelect) return;
+      const rows = await api('GET', '/api/admin/product-categories');
+      categorySelect.innerHTML = '<option value="">無類別</option>';
+      rows.forEach(cat => {
+        const option = document.createElement('option');
+        option.value = cat.id;
+        option.textContent = cat.name;
+        categorySelect.appendChild(option);
+      });
+    }
+    
+    async function loadProducts() {
+      if (!prodTable) return;
+      const rows = await api('GET', '/api/admin/products');
+      const tbody = prodTable.querySelector('tbody');
+      tbody.innerHTML = '';
+      rows.forEach(r => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${r.id}</td><td>${r.name}</td><td>NT$ ${Number(r.price || 0).toLocaleString()}</td><td>${r.category_name || '—'}</td><td>${r.is_published ? '上架' : '下架'}</td><td><button data-edit="${r.id}">編輯</button> <button data-del="${r.id}">刪除</button></td>`;
+        tbody.appendChild(tr);
+      });
+      tbody.addEventListener('click', async (e) => {
+        const id = e.target.dataset.edit || e.target.dataset.del;
+        if (!id) return;
+        if (e.target.dataset.edit) {
+          const product = await api('GET', `/api/admin/products/${id}`);
+          if (!product) return;
+          prodForm.querySelector('[name="id"]').value = product.id;
+          prodForm.querySelector('[name="name"]').value = product.name || '';
+          prodForm.querySelector('[name="price"]').value = product.price || 0;
+          if (categorySelect) categorySelect.value = product.category_id || '';
+          prodForm.querySelector('[name="cover_media_id"]').value = product.cover_media_id || '';
+          if (descEditor) descEditor.innerHTML = product.description_html || '';
+          prodForm.querySelector('[name="is_published"]').checked = !!product.is_published;
+          
+          // Load product images
+          productImages = (product.images || []).map(img => ({ media_id: img.media_id, file_path: img.file_path, file_name: img.file_name }));
+          renderProductImages();
+        } else if (e.target.dataset.del) {
+          if (!confirm('確定刪除？')) return;
+          await api('DELETE', `/api/admin/products/${id}`);
+          await loadProducts();
+          prodForm.reset();
+          if (descEditor) descEditor.innerHTML = '';
+          productImages = [];
+          renderProductImages();
+        }
+      });
+    }
+    
+    function renderProductImages() {
+      if (!imagesList) return;
+      imagesList.innerHTML = '';
+      productImages.forEach((img, index) => {
+        const item = document.createElement('div');
+        item.className = 'product-image-item';
+        item.innerHTML = `
+          <img src="${img.file_path}" alt="${img.file_name}">
+          <button class="remove-btn" data-index="${index}">×</button>
+        `;
+        item.querySelector('.remove-btn').addEventListener('click', () => {
+          productImages.splice(index, 1);
+          renderProductImages();
+        });
+        imagesList.appendChild(item);
+      });
+    }
+    
+    // Media picker
+    const picker = document.getElementById('product-picker');
+    const pickerGrid = document.getElementById('product-picker-grid');
+    const pickerPager = document.getElementById('product-picker-pager');
+    let pickerMode = 'cover'; // 'cover' or 'images'
+    
+    async function loadMediaForPicker(page = 1) {
+      if (!pickerGrid || !pickerPager) return;
+      const data = await api('GET', `/api/admin/media?page=${page}&limit=24`);
+      pickerGrid.innerHTML = '';
+      data.items.forEach(it => {
+        const btn = document.createElement('button');
+        btn.className = 'btn ghost';
+        btn.style.display = 'block';
+        btn.style.padding = '0';
+        btn.style.borderRadius = '12px';
+        btn.style.overflow = 'hidden';
+        btn.style.border = '1px solid #e5e7eb';
+        btn.style.background = '#fff';
+        btn.innerHTML = `<img src="${it.file_path}" alt="" style="width:100%;height:120px;object-fit:cover"><div style="padding:8px 10px;font-size:12px;color:#374151;">${it.file_name}</div>`;
+        btn.addEventListener('click', () => {
+          if (pickerMode === 'cover') {
+            prodForm.querySelector('[name="cover_media_id"]').value = it.id || '';
+          } else {
+            productImages.push({ media_id: it.id, file_path: it.file_path, file_name: it.file_name });
+            renderProductImages();
+          }
+          picker.style.display = 'none';
+        });
+        pickerGrid.appendChild(btn);
+      });
+      pickerPager.innerHTML = '';
+      const totalPages = Math.ceil(data.total / data.limit);
+      for (let i = 1; i <= totalPages; i++) {
+        const a = document.createElement('a');
+        a.href = '#';
+        a.textContent = i;
+        a.className = 'btn ghost';
+        a.style.padding = '6px 10px';
+        a.style.borderRadius = '8px';
+        if (i === data.page) a.style.background = '#111827', a.style.color = '#fff';
+        a.addEventListener('click', (e) => { e.preventDefault(); loadMediaForPicker(i); });
+        pickerPager.appendChild(a);
+      }
+    }
+    
+    document.getElementById('product-cover-pick')?.addEventListener('click', () => {
+      pickerMode = 'cover';
+      picker.style.display = 'flex';
+      loadMediaForPicker(1);
+    });
+    
+    document.getElementById('product-images-pick')?.addEventListener('click', () => {
+      pickerMode = 'images';
+      picker.style.display = 'flex';
+      loadMediaForPicker(1);
+    });
+    
+    // Upload handlers
+    document.getElementById('product-cover-upload')?.addEventListener('click', () => {
+      document.getElementById('product-cover-file')?.click();
+    });
+    
+    document.getElementById('product-cover-file')?.addEventListener('change', async (e) => {
+      if (!e.target.files || !e.target.files[0]) return;
+      const csrf = await getCsrf();
+      const fd = new FormData();
+      fd.append('file', e.target.files[0]);
+      const res = await fetch('/api/admin/media/upload', { method: 'POST', headers: { 'CSRF-Token': csrf }, body: fd, credentials: 'same-origin' });
+      const j = await res.json();
+      if (j && j.media_id) {
+        prodForm.querySelector('[name="cover_media_id"]').value = j.media_id;
+      }
+    });
+    
+    document.getElementById('product-images-upload')?.addEventListener('click', () => {
+      document.getElementById('product-images-file')?.click();
+    });
+    
+    document.getElementById('product-images-file')?.addEventListener('change', async (e) => {
+      if (!e.target.files || !e.target.files.length) return;
+      const csrf = await getCsrf();
+      for (const file of Array.from(e.target.files)) {
+        const fd = new FormData();
+        fd.append('file', file);
+        const res = await fetch('/api/admin/media/upload', { method: 'POST', headers: { 'CSRF-Token': csrf }, body: fd, credentials: 'same-origin' });
+        const j = await res.json();
+        if (j && j.media_id) {
+          productImages.push({ media_id: j.media_id, file_path: j.file_path || '', file_name: file.name });
+        }
+      }
+      renderProductImages();
+    });
+    
+    // Description editor toolbar
+    const descToolbar = document.createElement('div');
+    descToolbar.className = 'toolbar';
+    descToolbar.innerHTML = `
+      <button data-cmd="bold">粗體</button>
+      <button data-cmd="italic">斜體</button>
+      <button data-cmd="insertUnorderedList">項目符號</button>
+      <button data-cmd="formatBlock" data-value="h2">H2</button>
+      <button id="product-desc-insert-img" class="ghost">插入圖片</button>
+    `;
+    if (descEditor && descEditor.parentNode) {
+      descEditor.parentNode.insertBefore(descToolbar, descEditor);
+    }
+    descToolbar.addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-cmd]');
+      if (!btn) return;
+      const cmd = btn.getAttribute('data-cmd');
+      const val = btn.getAttribute('data-value') || null;
+      document.execCommand(cmd, false, val);
+    });
+    
+    document.getElementById('product-desc-insert-img')?.addEventListener('click', async () => {
+      const mediaId = prompt('請輸入 Media ID:');
+      if (!mediaId) return;
+      const media = await api('GET', `/api/admin/media/${mediaId}`);
+      if (media && media.file_path) {
+        document.execCommand('insertImage', false, media.file_path);
+      }
+    });
+    
+    if (prodForm) {
+      prodForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const fd = new FormData(prodForm);
+        const data = Object.fromEntries(fd.entries());
+        data.description_html = descEditor ? descEditor.innerHTML : '';
+        data.is_published = prodForm.querySelector('[name="is_published"]').checked ? 1 : 0;
+        data.images = productImages;
+        const id = data.id;
+        delete data.id;
+        if (id) {
+          await api('PUT', `/api/admin/products/${id}`, data);
+        } else {
+          await api('POST', '/api/admin/products', data);
+        }
+        await loadProducts();
+        prodForm.reset();
+        if (descEditor) descEditor.innerHTML = '';
+        productImages = [];
+        renderProductImages();
+      });
+    }
+    
+    if (prodDelete) {
+      prodDelete.addEventListener('click', async () => {
+        const id = prodForm.querySelector('[name="id"]').value;
+        if (!id) return;
+        if (!confirm('確定刪除？')) return;
+        await api('DELETE', `/api/admin/products/${id}`);
+        await loadProducts();
+        prodForm.reset();
+        if (descEditor) descEditor.innerHTML = '';
+        productImages = [];
+        renderProductImages();
+      });
+    }
+    
+    await loadCategories();
+    await loadCategoriesForSelect();
+    await loadProducts();
+  }
+
   function bindLogout() {
     const btn = document.getElementById('logout');
     if (!btn) return;
@@ -1341,6 +1649,7 @@
     if (page === 'change-password.html') await initChangePassword();
     if (page === 'index.html') await initSlides();
     if (page === 'courses.html' || page === 'materials.html') await initCoursesMaterials();
+    if (page === 'products.html') await initProducts();
     
     // Updated initializers
     if (page === 'about.html') await initAboutEditors();

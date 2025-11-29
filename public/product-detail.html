@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <title id="product-title">商品詳情</title>
+  <link rel="stylesheet" href="/css/site.css">
+  <script defer src="/js/cms.js"></script>
+  <style>
+    .product-detail-header {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 32px;
+      margin-bottom: 32px;
+    }
+    @media (max-width: 768px) {
+      .product-detail-header {
+        grid-template-columns: 1fr;
+      }
+    }
+    .product-images {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .product-main-image {
+      width: 100%;
+      aspect-ratio: 1;
+      object-fit: cover;
+      border-radius: 12px;
+      background: #f3f4f6;
+    }
+    .product-thumbnails {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+    }
+    .product-thumbnail {
+      width: 80px;
+      height: 80px;
+      object-fit: cover;
+      border-radius: 8px;
+      cursor: pointer;
+      border: 2px solid transparent;
+      transition: border-color 0.2s;
+    }
+    .product-thumbnail.active {
+      border-color: #111827;
+    }
+    .product-info {
+      display: flex;
+      flex-direction: column;
+    }
+    .product-name {
+      font-size: 2rem;
+      font-weight: 700;
+      margin-bottom: 12px;
+      color: #111827;
+    }
+    .product-category {
+      font-size: 16px;
+      color: #666;
+      margin-bottom: 16px;
+    }
+    .product-price {
+      font-size: 2.5rem;
+      font-weight: 700;
+      color: #111827;
+      margin-bottom: 24px;
+    }
+    .product-description {
+      line-height: 1.8;
+      color: #374151;
+    }
+    .product-description img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 8px;
+      margin: 16px 0;
+    }
+    .product-description p {
+      margin-bottom: 16px;
+    }
+    .product-description h2, .product-description h3 {
+      margin-top: 24px;
+      margin-bottom: 16px;
+      color: #111827;
+    }
+  </style>
+</head>
+<body data-page="product-detail">
+  <header id="site-header" class="site-header"></header>
+  <main class="container">
+    <div class="card">
+      <div class="product-detail-header">
+        <div class="product-images">
+          <img id="product-main-image" class="product-main-image" alt="" onerror="this.style.display='none'">
+          <div id="product-thumbnails" class="product-thumbnails"></div>
+        </div>
+        <div class="product-info">
+          <h1 id="product-name" class="product-name"></h1>
+          <div id="product-category" class="product-category"></div>
+          <div class="product-price">NT$ <span id="product-price"></span></div>
+          <div id="product-description" class="product-description"></div>
+        </div>
+      </div>
+    </div>
+  </main>
+  <a id="line-float" class="line-float" target="_blank" rel="noopener">LINE</a>
+  <footer class="site-footer" id="site-footer"></footer>
+</body>
+</html>
+

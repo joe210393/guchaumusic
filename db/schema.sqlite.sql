@@ -190,6 +190,47 @@ CREATE TABLE IF NOT EXISTS course_materials (
 );
 CREATE INDEX IF NOT EXISTS idx_course_materials_media ON course_materials(media_id);
 
+-- 商品類別
+CREATE TABLE IF NOT EXISTS product_categories (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL UNIQUE,
+  order_index INTEGER DEFAULT 0,
+  created_at TEXT DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_product_categories_order ON product_categories(order_index);
+
+-- 商品
+CREATE TABLE IF NOT EXISTS products (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL,
+  slug TEXT UNIQUE,
+  price REAL NOT NULL, -- DECIMAL(10,2)
+  category_id INTEGER NULL,
+  cover_media_id INTEGER NULL,
+  description_html TEXT NULL,
+  is_published INTEGER DEFAULT 1,
+  created_at TEXT DEFAULT (datetime('now')),
+  updated_at TEXT DEFAULT (datetime('now')),
+  FOREIGN KEY (category_id) REFERENCES product_categories(id) ON DELETE SET NULL,
+  FOREIGN KEY (cover_media_id) REFERENCES media(id) ON DELETE SET NULL
+);
+CREATE INDEX IF NOT EXISTS idx_products_category ON products(category_id);
+CREATE INDEX IF NOT EXISTS idx_products_published ON products(is_published);
+CREATE INDEX IF NOT EXISTS idx_products_slug ON products(slug);
+
+-- 商品照片（多張）
+CREATE TABLE IF NOT EXISTS product_images (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  product_id INTEGER NOT NULL,
+  media_id INTEGER NOT NULL,
+  order_index INTEGER DEFAULT 0,
+  created_at TEXT DEFAULT (datetime('now')),
+  FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
+  FOREIGN KEY (media_id) REFERENCES media(id) ON DELETE CASCADE
+);
+CREATE INDEX IF NOT EXISTS idx_product_images_product ON product_images(product_id);
+CREATE INDEX IF NOT EXISTS idx_product_images_order ON product_images(product_id, order_index);
+
 -- 預設關於頁
 INSERT OR IGNORE INTO pages(slug, title, content_html, background_image_id, is_published)
 VALUES

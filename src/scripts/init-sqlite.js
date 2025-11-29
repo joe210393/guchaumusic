@@ -172,6 +172,59 @@ try {
   insertMenu.run('影像紀錄', 'media-records', '/media-records.html', 40, null);
   insertMenu.run('聯絡我們', 'contact', '/contact.html', 50, null);
 
+  // Check for product_categories and products tables
+  try {
+    const testCategories = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='product_categories'").get();
+    if (!testCategories) {
+      console.log('Creating product_categories table...');
+      db.prepare(`CREATE TABLE IF NOT EXISTS product_categories (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL UNIQUE,
+        order_index INTEGER DEFAULT 0,
+        created_at TEXT DEFAULT (datetime('now'))
+      )`).run();
+      db.prepare(`CREATE INDEX IF NOT EXISTS idx_product_categories_order ON product_categories(order_index)`).run();
+    }
+    
+    const testProducts = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='products'").get();
+    if (!testProducts) {
+      console.log('Creating products table...');
+      db.prepare(`CREATE TABLE IF NOT EXISTS products (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        slug TEXT UNIQUE,
+        price REAL NOT NULL,
+        category_id INTEGER NULL,
+        cover_media_id INTEGER NULL,
+        description_html TEXT NULL,
+        is_published INTEGER DEFAULT 1,
+        created_at TEXT DEFAULT (datetime('now')),
+        updated_at TEXT DEFAULT (datetime('now')),
+        FOREIGN KEY (category_id) REFERENCES product_categories(id) ON DELETE SET NULL,
+        FOREIGN KEY (cover_media_id) REFERENCES media(id) ON DELETE SET NULL
+      )`).run();
+      db.prepare(`CREATE INDEX IF NOT EXISTS idx_products_category ON products(category_id)`).run();
+      db.prepare(`CREATE INDEX IF NOT EXISTS idx_products_published ON products(is_published)`).run();
+      db.prepare(`CREATE INDEX IF NOT EXISTS idx_products_slug ON products(slug)`).run();
+    }
+    
+    const testProductImages = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='product_images'").get();
+    if (!testProductImages) {
+      console.log('Creating product_images table...');
+      db.prepare(`CREATE TABLE IF NOT EXISTS product_images (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        product_id INTEGER NOT NULL,
+        media_id INTEGER NOT NULL,
+        order_index INTEGER DEFAULT 0,
+        created_at TEXT DEFAULT (datetime('now')),
+        FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
+        FOREIGN KEY (media_id) REFERENCES media(id) ON DELETE CASCADE
+      )`).run();
+      db.prepare(`CREATE INDEX IF NOT EXISTS idx_product_images_product ON product_images(product_id)`).run();
+      db.prepare(`CREATE INDEX IF NOT EXISTS idx_product_images_order ON product_images(product_id, order_index)`).run();
+    }
+  } catch (e) { console.error('Failed to check/create product tables', e); }
+
   // Check for media_records table
   try {
     const test = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='media_records'").get();
