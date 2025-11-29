@@ -156,6 +156,23 @@ apiAdminRouter.get('/pages', requireAuth, async (_req, res) => {
   const rows = await query('SELECT * FROM pages ORDER BY id DESC');
   res.json(rows);
 });
+apiAdminRouter.get('/pages/:slug', requireAuth, async (req, res) => {
+  const slug = String(req.params.slug || '').trim();
+  const rows = await query('SELECT * FROM pages WHERE slug = ?', [slug]);
+  if (rows[0]) {
+    return res.json(rows[0]);
+  }
+  // If page doesn't exist, return a default structure instead of 404
+  // This allows admin panel to create new pages
+  res.json({
+    id: null,
+    slug: slug,
+    title: slug,
+    content_html: '',
+    background_image_id: null,
+    is_published: 1
+  });
+});
 apiAdminRouter.post('/pages', requireAuth, async (req, res) => {
   const { slug, title, content_html, background_image_id, is_published } = req.body || {};
   await query(
