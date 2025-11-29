@@ -107,7 +107,51 @@ try {
      db.exec(schema);
      console.log('Database schema applied.');
   } else {
-     console.log('Tables already exist, skipping schema creation.');
+     console.log('Tables already exist, checking for new tables...');
+     // Even if tables exist, check for new tables like events
+     try {
+       const testEvents = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='events'").get();
+       if (!testEvents) {
+         console.log('Events table missing, creating...');
+         db.prepare(`CREATE TABLE IF NOT EXISTS events (
+           id INTEGER PRIMARY KEY AUTOINCREMENT,
+           event_date TEXT NOT NULL,
+           event_type TEXT NOT NULL,
+           title TEXT NOT NULL,
+           description TEXT NULL,
+           start_time TEXT NULL,
+           end_time TEXT NULL,
+           max_participants INTEGER NULL,
+           is_active INTEGER DEFAULT 1,
+           created_at TEXT DEFAULT (datetime('now')),
+           updated_at TEXT DEFAULT (datetime('now'))
+         )`).run();
+         db.prepare(`CREATE INDEX IF NOT EXISTS idx_events_date ON events(event_date)`).run();
+         db.prepare(`CREATE INDEX IF NOT EXISTS idx_events_type ON events(event_type)`).run();
+         db.prepare(`CREATE INDEX IF NOT EXISTS idx_events_active ON events(is_active)`).run();
+       }
+       
+       const testRegistrations = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='event_registrations'").get();
+       if (!testRegistrations) {
+         console.log('Event_registrations table missing, creating...');
+         db.prepare(`CREATE TABLE IF NOT EXISTS event_registrations (
+           id INTEGER PRIMARY KEY AUTOINCREMENT,
+           event_id INTEGER NOT NULL,
+           member_id INTEGER NOT NULL,
+           status TEXT DEFAULT 'interested',
+           notes TEXT NULL,
+           created_at TEXT DEFAULT (datetime('now')),
+           updated_at TEXT DEFAULT (datetime('now')),
+           FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE CASCADE,
+           FOREIGN KEY (member_id) REFERENCES members(id) ON DELETE CASCADE
+         )`).run();
+         db.prepare(`CREATE INDEX IF NOT EXISTS idx_event_registrations_event ON event_registrations(event_id)`).run();
+         db.prepare(`CREATE INDEX IF NOT EXISTS idx_event_registrations_member ON event_registrations(member_id)`).run();
+         db.prepare(`CREATE UNIQUE INDEX IF NOT EXISTS idx_event_registrations_unique ON event_registrations(event_id, member_id)`).run();
+       }
+     } catch (e) {
+       console.error('Error creating events tables:', e);
+     }
   }
   
   let adminExists = false;
