@@ -298,9 +298,8 @@
               { title: '商業演出', slug: 'service-commercial', type: 'page' },
               // Note: 'service-sales' (樂器販售) removed - now has featured products section above
               { title: '共享與藝術空間', slug: 'service-space', type: 'page' },
-              { title: '音樂觀光體驗', slug: 'service-tourism', type: 'page' },
-              { title: '相關報導', slug: 'news', type: 'list' },
-              { title: '影像紀錄', slug: 'media-records', type: 'list' }
+              { title: '音樂觀光體驗', slug: 'service-tourism', type: 'page' }
+              // Note: 'news' (相關報導) and 'media-records' (影像紀錄) removed - now have dedicated sections below booking calendar
           ];
           
           // Load featured products (5 latest products)
@@ -498,6 +497,113 @@
         } catch (err) {
           console.error('Error loading home calendar:', err);
           homeCalendarEl.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px;color:#999;">載入行事曆失敗</div>';
+        }
+      }
+      
+      // Load latest news (5 items)
+      const homeNewsList = q('#home-news-list');
+      const homeNewsTpl = q('#home-news-item-tpl');
+      if (homeNewsList && homeNewsTpl) {
+        try {
+          const newsData = await fetchJson('/api/public/news?page=1&limit=5');
+          const newsItems = newsData.items || [];
+          homeNewsList.innerHTML = '';
+          
+          if (newsItems.length > 0) {
+            newsItems.forEach(item => {
+              const node = document.importNode(homeNewsTpl.content, true);
+              qa('[data-prop]', node).forEach(el => {
+                const [attr, path] = el.getAttribute('data-prop').split(':');
+                let value;
+                if (path === 'title') value = item.title;
+                else if (path === 'excerpt') value = item.excerpt || '';
+                else if (path === 'cover_url') value = item.cover_url || '';
+                else if (path === 'link') value = `/news-post.html?slug=${encodeURIComponent(item.slug)}`;
+                
+                if (attr === 'text') el.textContent = value ?? '';
+                else if (attr === 'src') el.src = value ?? '';
+                else if (attr === 'href') el.href = value ?? '#';
+              });
+              homeNewsList.appendChild(node);
+            });
+          } else {
+            homeNewsList.innerHTML = '<p style="text-align:center;color:#666;padding:20px;grid-column:1/-1;">暫無相關報導</p>';
+          }
+        } catch (err) {
+          console.error('[Frontend] Error loading home news:', err);
+          if (homeNewsList) {
+            homeNewsList.innerHTML = '<p style="text-align:center;color:#c00;padding:20px;grid-column:1/-1;">載入失敗</p>';
+          }
+        }
+      }
+      
+      // Load latest media records (5 items)
+      const homeMediaList = q('#home-media-records-list');
+      const homeMediaTpl = q('#home-media-item-tpl');
+      if (homeMediaList && homeMediaTpl) {
+        try {
+          const mediaData = await fetchJson('/api/public/media-records?page=1&limit=5');
+          const mediaItems = mediaData.items || [];
+          homeMediaList.innerHTML = '';
+          
+          // Helper function to generate embed HTML
+          function getEmbed(url) {
+            if (!url) return '';
+            try {
+              const u = new URL(url);
+              if (u.hostname.includes('youtube.com') || u.hostname.includes('youtu.be')) {
+                let vid = null;
+                if (u.hostname === 'youtu.be' || u.hostname.includes('youtu.be')) {
+                  vid = u.pathname.replace(/^\//, '').split('/')[0].split('?')[0];
+                } else if (u.pathname.includes('/embed/')) {
+                  vid = u.pathname.split('/embed/')[1].split('?')[0];
+                } else if (u.pathname.includes('/v/')) {
+                  vid = u.pathname.split('/v/')[1].split('?')[0];
+                } else if (u.pathname.includes('/shorts/')) {
+                  vid = u.pathname.split('/shorts/')[1].split('?')[0];
+                } else {
+                  vid = u.searchParams.get('v');
+                }
+                if (vid && /^[a-zA-Z0-9_-]{11}$/.test(vid)) {
+                  return `<iframe width="100%" height="100%" src="https://www.youtube.com/embed/${vid}?rel=0&modestbranding=1&enablejsapi=1" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen style="position:absolute;top:0;left:0;width:100%;height:100%;"></iframe>`;
+                }
+              }
+            } catch (e) {
+              console.error('Error parsing embed URL:', e);
+            }
+            return '';
+          }
+          
+          if (mediaItems.length > 0) {
+            mediaItems.forEach(item => {
+              const node = document.importNode(homeMediaTpl.content, true);
+              qa('[data-prop]', node).forEach(el => {
+                const [attr, path] = el.getAttribute('data-prop').split(':');
+                let value;
+                if (path === 'title') value = item.title;
+                else if (path === 'excerpt') value = item.excerpt || '';
+                else if (path === 'link') value = `/media-record-post.html?slug=${encodeURIComponent(item.slug)}`;
+                else if (path === 'embed') {
+                  value = getEmbed(item.embed_url);
+                  if (attr === 'html') {
+                    el.innerHTML = value;
+                    return;
+                  }
+                }
+                
+                if (attr === 'text') el.textContent = value ?? '';
+                else if (attr === 'href') el.href = value ?? '#';
+              });
+              homeMediaList.appendChild(node);
+            });
+          } else {
+            homeMediaList.innerHTML = '<p style="text-align:center;color:#666;padding:20px;grid-column:1/-1;">暫無影像紀錄</p>';
+          }
+        } catch (err) {
+          console.error('[Frontend] Error loading home media records:', err);
+          if (homeMediaList) {
+            homeMediaList.innerHTML = '<p style="text-align:center;color:#c00;padding:20px;grid-column:1/-1;">載入失敗</p>';
+          }
         }
       }
 

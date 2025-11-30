@@ -152,7 +152,29 @@
       </div>
     </section>
     
-    <!-- 六大區塊 -->
+    <!-- 相關報導區塊 -->
+    <section id="home-news" class="mb-6" style="margin-bottom:48px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;">
+        <h2 style="font-size:2rem;font-weight:700;color:#111827;margin:0;">相關報導</h2>
+        <a href="/news.html" class="btn ghost" style="text-decoration:none;">看更多 →</a>
+      </div>
+      <div id="home-news-list" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:20px;">
+        <!-- News items injected by cms.js -->
+      </div>
+    </section>
+    
+    <!-- 影像紀錄區塊 -->
+    <section id="home-media-records" class="mb-6" style="margin-bottom:48px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;">
+        <h2 style="font-size:2rem;font-weight:700;color:#111827;margin:0;">影像紀錄</h2>
+        <a href="/media-records.html" class="btn ghost" style="text-decoration:none;">看更多 →</a>
+      </div>
+      <div id="home-media-records-list" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:20px;">
+        <!-- Media records injected by cms.js -->
+      </div>
+    </section>
+    
+    <!-- 四大區塊 -->
     <div id="home-grid" class="grid">
       <!-- Content injected by cms.js -->
     </div>
@@ -180,6 +202,32 @@
       <div class="actions">
         <a class="btn ghost sm" data-prop="href:link">看更多</a>
       </div>
+    </article>
+  </template>
+  
+  <template id="home-news-item-tpl">
+    <article style="background:#fff;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.08);overflow:hidden;transition:transform 0.2s;">
+      <a data-prop="href:link" style="text-decoration:none;color:inherit;display:block;">
+        <img data-prop="src:cover_url" alt="" style="width:100%;height:180px;object-fit:cover;display:block;background:#f3f4f6;" onerror="this.style.display='none'">
+        <div style="padding:16px;">
+          <h4 data-prop="text:title" style="margin:0 0 8px 0;font-size:16px;line-height:1.4;color:#333;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;"></h4>
+          <p data-prop="text:excerpt" style="margin:0;font-size:14px;color:#666;line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;"></p>
+        </div>
+      </a>
+    </article>
+  </template>
+  
+  <template id="home-media-item-tpl">
+    <article style="background:#fff;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.08);overflow:hidden;transition:transform 0.2s;">
+      <a data-prop="href:link" style="text-decoration:none;color:inherit;display:block;">
+        <div data-prop="html:embed" style="width:100%;height:180px;background:#000;overflow:hidden;position:relative;">
+          <!-- Embed will be injected here -->
+        </div>
+        <div style="padding:16px;">
+          <h4 data-prop="text:title" style="margin:0 0 8px 0;font-size:16px;line-height:1.4;color:#333;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;"></h4>
+          <p data-prop="text:excerpt" style="margin:0;font-size:14px;color:#666;line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;"></p>
+        </div>
+      </a>
     </article>
   </template>
 
