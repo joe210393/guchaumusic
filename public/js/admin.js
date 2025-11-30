@@ -1765,7 +1765,10 @@
         const tbody = mTable.querySelector('tbody'); tbody.innerHTML='';
         rows.forEach(r=>{
           const tr=document.createElement('tr');
-          tr.innerHTML = `<td>${r.id}</td><td>${r.title}</td><td>${r.file_name}</td><td>${r.min_tier}</td><td>${r.is_active?'✔':'—'}</td><td><button data-edit="${r.id}">編輯</button> <button data-del="${r.id}">刪除</button></td>`;
+          // Map tier values to display names
+          const tierNames = { free: '免費', basic: '初階', advanced: '高級', platinum: '白金' };
+          const tierDisplay = tierNames[r.min_tier] || r.min_tier;
+          tr.innerHTML = `<td>${r.id}</td><td>${r.title}</td><td>${r.file_name}</td><td>${tierDisplay}</td><td>${r.is_active?'✔':'—'}</td><td><button data-edit="${r.id}">編輯</button> <button data-del="${r.id}">刪除</button></td>`;
           tbody.appendChild(tr);
         });
         tbody.addEventListener('click', async (e)=>{
