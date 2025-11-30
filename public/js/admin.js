@@ -704,7 +704,11 @@
         
         // Load all fields, ensuring they are properly set
         document.getElementById('news-title').value = String(r.title || '').trim(); 
-        document.getElementById('news-slug').value = String(r.slug || '').trim(); 
+        // Keep slug hidden but set it for editing (slug is auto-generated for new articles)
+        const slugInput = document.getElementById('news-slug');
+        if (slugInput) {
+          slugInput.value = String(r.slug || '').trim();
+        } 
         document.getElementById('news-excerpt').value = String(r.excerpt || ''); 
         // Load content_html, ensuring editor is visible and has content
         const contentHtml = String(r.content_html || '').trim();
@@ -746,6 +750,80 @@
     form.parentNode.replaceChild(formClone, form);
     const cleanForm = document.getElementById('news-form');
     submitBtn = cleanForm.querySelector('button[type="submit"]');
+    
+    // Re-bind all button events after form clone
+    const cleanEditor = document.getElementById('news-editor');
+    const cleanToolbar = document.getElementById('news-toolbar');
+    const cleanInsertImgBtn = document.getElementById('news-insert-img');
+    const cleanUploadImgBtn = document.getElementById('news-upload-img');
+    const cleanInsertFile = document.getElementById('news-insert-file');
+    const cleanCoverPickBtn = document.getElementById('news-cover-pick');
+    const cleanCoverUploadBtn = document.getElementById('news-cover-upload');
+    const cleanCoverFile = document.getElementById('news-cover-file');
+    const cleanPickerClose = document.getElementById('news-picker-close');
+    
+    // Re-bind toolbar events
+    cleanToolbar?.addEventListener('click', (e) => { 
+      const btn=e.target.closest('[data-cmd]'); 
+      if (!btn) return; 
+      const cmd=btn.getAttribute('data-cmd'); 
+      const val=btn.getAttribute('data-value')||null; 
+      document.execCommand(cmd,false,val); 
+    });
+    
+    // Re-bind image insert/upload buttons
+    cleanInsertImgBtn?.addEventListener('click', (e) => { 
+      e.preventDefault(); 
+      e.stopPropagation(); 
+      cleanInsertFile?.click(); 
+    });
+    cleanUploadImgBtn?.addEventListener('click', (e) => { 
+      e.preventDefault(); 
+      e.stopPropagation(); 
+      cleanInsertFile?.click(); 
+    });
+    cleanInsertFile?.addEventListener('change', async (e) => { 
+      const f=e.target.files?.[0]; 
+      if (!f) return; 
+      const csrf=await getCsrf(); 
+      const fd=new FormData(); 
+      fd.append('file', f); 
+      const res=await fetch('/api/admin/media/upload',{method:'POST', headers:{'CSRF-Token': csrf}, body: fd, credentials:'same-origin'}); 
+      const j=await res.json(); 
+      if (j?.path || j?.file_path) { 
+        insertImageAtCursor(cleanEditor, j.path || j.file_path); 
+      }
+      e.target.value = ''; // Reset file input
+    });
+    
+    // Re-bind cover image pick/upload buttons
+    cleanCoverPickBtn?.addEventListener('click',()=>{ 
+      picker.style.display='block'; 
+      loadMedia(1); 
+    });
+    cleanCoverUploadBtn?.addEventListener('click',()=> cleanCoverFile?.click());
+    cleanCoverFile?.addEventListener('change', async (e)=>{ 
+      const f=e.target.files?.[0]; 
+      if (!f) return; 
+      const csrf=await getCsrf(); 
+      const fd=new FormData(); 
+      fd.append('file', f); 
+      const res=await fetch('/api/admin/media/upload',{method:'POST', headers:{'CSRF-Token': csrf}, body: fd, credentials:'same-origin'}); 
+      const j=await res.json(); 
+      if (j?.media_id) document.getElementById('news-cover').value=j.media_id;
+      e.target.value = ''; // Reset file input
+    });
+    cleanPickerClose?.addEventListener('click',(e)=>{e.preventDefault(); picker.style.display='none';});
+    
+    // Hide slug input and make it auto-generated
+    const slugInput = document.getElementById('news-slug');
+    if (slugInput) {
+      slugInput.style.display = 'none';
+      const slugLabel = slugInput.previousElementSibling;
+      if (slugLabel && slugLabel.tagName === 'LABEL') {
+        slugLabel.style.display = 'none';
+      }
+    }
     
     cleanForm.addEventListener('submit', async (e)=>{ 
       e.preventDefault(); 
@@ -806,15 +884,19 @@
           return slug;
         }
         
-        // For new articles, auto-generate unique slug if slug is empty or same as title
+        // Always auto-generate slug for new articles, or use existing slug for edits
         if (!id) {
-          if (!originalSlug || originalSlug === data.title) {
-            // Generate slug from title with timestamp to ensure uniqueness
-            originalSlug = generateUniqueSlug(data.title, Date.now());
-            console.log('[Frontend] Auto-generated slug for new article:', originalSlug);
-            // Update the slug input field immediately to prevent duplicate submissions
-            document.getElementById('news-slug').value = originalSlug;
+          // For new articles, always generate a unique slug
+          originalSlug = generateUniqueSlug(data.title, Date.now() + '-' + Math.floor(Math.random() * 10000));
+          console.log('[Frontend] Auto-generated slug for new article:', originalSlug);
+          // Update the slug input field (even though it's hidden)
+          const slugInput = document.getElementById('news-slug');
+          if (slugInput) {
+            slugInput.value = originalSlug;
           }
+        } else {
+          // For edits, use the existing slug from the form
+          originalSlug = String(data.slug || '').trim();
         }
         
         data.slug = originalSlug;
