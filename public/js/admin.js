@@ -840,16 +840,16 @@
         
         // Validate required fields
         if (!data.title || !data.title.trim()) {
+          isSubmitting = false;
+          if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.textContent = '儲存';
+          }
           alert('請輸入標題');
-          return;
-        }
-        if (!data.slug || !data.slug.trim()) {
-          alert('請輸入 Slug');
           return;
         }
         
         data.title = String(data.title).trim();
-        let originalSlug = String(data.slug).trim();
         
         // Get id early to check if this is a new article or edit
         const id = data.id ? String(data.id).trim() : null;
@@ -878,18 +878,19 @@
         }
         
         // Always auto-generate slug for new articles, or use existing slug for edits
+        let originalSlug;
         if (!id) {
           // For new articles, always generate a unique slug
           originalSlug = generateUniqueSlug(data.title, Date.now() + '-' + Math.floor(Math.random() * 10000));
           console.log('[Frontend] Auto-generated slug for new article:', originalSlug);
-          // Update the slug input field (even though it's hidden)
-          const slugInput = document.getElementById('news-slug');
-          if (slugInput) {
-            slugInput.value = originalSlug;
-          }
         } else {
-          // For edits, use the existing slug from the form
+          // For edits, use the existing slug from the form, or generate one if missing
           originalSlug = String(data.slug || '').trim();
+          if (!originalSlug) {
+            // If slug is missing for some reason, generate one
+            originalSlug = generateUniqueSlug(data.title, Date.now() + '-' + Math.floor(Math.random() * 10000));
+            console.log('[Frontend] Generated slug for edit (was missing):', originalSlug);
+          }
         }
         
         data.slug = originalSlug;
