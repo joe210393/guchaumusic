@@ -340,9 +340,14 @@ apiAdminRouter.post('/news', requireAuth, async (req, res) => {
     }
     
     // Check if slug already exists
-    const existing = await query('SELECT id FROM news WHERE slug = ?', [String(slug).trim()]);
+    const existing = await query('SELECT id, title FROM news WHERE slug = ?', [String(slug).trim()]);
     if (existing && existing.length > 0) {
-      return res.status(400).json({ error: 'Slug already exists' });
+      console.log('[POST /api/admin/news] Slug conflict detected:', existing[0]);
+      return res.status(400).json({ 
+        error: 'Slug already exists',
+        existing_id: existing[0].id,
+        existing_title: existing[0].title
+      });
     }
     
     const pubValue = (is_published === 1 || is_published === '1' || is_published === true) ? 1 : 0;
