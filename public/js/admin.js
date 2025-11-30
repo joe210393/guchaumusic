@@ -843,10 +843,23 @@
             const parsed = JSON.parse(errorMsg);
             if (parsed.existing_id) {
               console.log('[Frontend] Attempting to load existing news with ID:', parsed.existing_id);
-              // Load the existing news item and populate the form
-              const existingNews = await api('GET', '/api/admin/news');
-              console.log('[Frontend] Loaded news list, count:', existingNews ? existingNews.length : 0);
-              const existingItem = existingNews && Array.isArray(existingNews) ? existingNews.find(n => String(n.id) === String(parsed.existing_id)) : null;
+              
+              // Try to load the existing news item directly by ID first
+              let existingItem = null;
+              try {
+                // First, try to get all news and find the one with matching ID
+                const existingNews = await api('GET', '/api/admin/news');
+                console.log('[Frontend] Loaded news list, count:', existingNews ? existingNews.length : 0);
+                if (existingNews && Array.isArray(existingNews)) {
+                  existingItem = existingNews.find(n => String(n.id) === String(parsed.existing_id));
+                }
+              } catch (loadErr) {
+                console.error('[Frontend] Failed to load news list:', loadErr);
+                // If loading list fails, suggest page reload
+                alert('儲存失敗：Slug 已存在（ID: ' + parsed.existing_id + '）。請重新整理頁面後編輯該項目。');
+                return;
+              }
+              
               if (existingItem) {
                 console.log('[Frontend] Found existing item:', existingItem);
                 // Populate form with existing data
@@ -869,17 +882,19 @@
                 return; // Don't show error, form is now populated
               } else {
                 console.warn('[Frontend] Existing item not found in list, ID:', parsed.existing_id);
+                alert('儲存失敗：Slug 已存在（ID: ' + parsed.existing_id + '），但無法載入該項目。請重新整理頁面後編輯該項目。');
+                return;
               }
             }
           } catch (e) {
-            console.error('Failed to load existing news:', e);
+            console.error('Failed to process slug conflict:', e);
             console.error('Error details:', {
               message: e.message,
               stack: e.stack,
               name: e.name
             });
           }
-          alert('儲存失敗：Slug 已存在。這可能是因為第一次儲存已成功，但返回了錯誤。請重新整理頁面後編輯該項目。');
+          alert('儲存失敗：Slug 已存在。請重新整理頁面後編輯該項目。');
         } else {
           alert('儲存失敗：' + displayMsg);
         }

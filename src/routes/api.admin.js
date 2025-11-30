@@ -367,36 +367,67 @@ apiAdminRouter.post('/news', requireAuth, async (req, res) => {
       
       // Use insertId (not lastInsertRowid) as per db.js query function return format
       const insertedId = result.insertId;
-      console.log('[POST /api/admin/news] Insert successful:', {
+      console.log('[POST /api/admin/news] Insert result:', {
         insertId: insertedId,
         affectedRows: result.affectedRows,
-        title: String(title).trim(),
-        slug: String(slug).trim(),
-        content_length: sanitizedContent.length
+        result_type: typeof result,
+        result_keys: Object.keys(result || {})
       });
       
-      // If INSERT succeeded (we got an insertId), return success immediately
-      if (insertedId) {
-        console.log('[POST /api/admin/news] Returning success with id:', insertedId);
+      // Check if INSERT actually succeeded
+      // In SQLite, if INSERT succeeds, we get a valid insertId (number > 0)
+      // If insertId is 0 or undefined, something went wrong
+      if (insertedId && insertedId > 0) {
+        console.log('[POST /api/admin/news] Insert successful, returning success with id:', insertedId);
         return res.json({ ok: true, id: insertedId });
       } else {
-        // This should not happen, but handle it gracefully
-        console.warn('[POST /api/admin/news] INSERT succeeded but no insertId returned');
-        return res.json({ ok: true, id: null });
+        // INSERT didn't throw an error, but we didn't get a valid ID
+        // This could happen if the row was inserted but ID is 0 (shouldn't happen with AUTOINCREMENT)
+        // Or if there was a silent failure
+        console.warn('[POST /api/admin/news] INSERT returned invalid insertId:', insertedId);
+        // Try to query by slug to see if it was actually inserted
+        const check = await query('SELECT id, title FROM news WHERE slug = ?', [String(slug).trim()]);
+        if (check && check.length > 0) {
+          console.log('[POST /api/admin/news] Found existing record after INSERT, returning it:', check[0]);
+          return res.json({ ok: true, id: check[0].id });
+        }
+        // If we can't find it, return an error
+        return res.status(500).json({ error: 'Insert failed unexpectedly' });
       }
     } catch (insertErr) {
       // If INSERT fails due to UNIQUE constraint, query the existing record and return it
-      console.error('[POST /api/admin/news] INSERT failed:', insertErr);
-      if (insertErr.message && insertErr.message.includes('UNIQUE constraint')) {
+      console.error('[POST /api/admin/news] INSERT failed with error:', {
+        message: insertErr.message,
+        code: insertErr.code,
+        errno: insertErr.errno,
+        name: insertErr.name,
+        stack: insertErr.stack
+      });
+      
+      // Check for UNIQUE constraint error - SQLite error codes and messages
+      const isUniqueError = insertErr.message && (
+        insertErr.message.includes('UNIQUE constraint') ||
+        insertErr.message.includes('UNIQUE') ||
+        insertErr.code === 'SQLITE_CONSTRAINT_UNIQUE' ||
+        insertErr.code === 'SQLITE_CONSTRAINT' ||
+        insertErr.errno === 2067 || // SQLITE_CONSTRAINT_UNIQUE
+        insertErr.errno === 19     // SQLITE_CONSTRAINT
+      );
+      
+      if (isUniqueError) {
         // Query the existing record
-        const existing = await query('SELECT id, title FROM news WHERE slug = ?', [String(slug).trim()]);
-        if (existing && existing.length > 0) {
-          console.log('[POST /api/admin/news] UNIQUE constraint - slug exists:', existing[0]);
-          return res.status(400).json({ 
-            error: 'Slug already exists',
-            existing_id: existing[0].id,
-            existing_title: existing[0].title
-          });
+        try {
+          const existing = await query('SELECT id, title FROM news WHERE slug = ?', [String(slug).trim()]);
+          if (existing && existing.length > 0) {
+            console.log('[POST /api/admin/news] UNIQUE constraint - slug exists:', existing[0]);
+            return res.status(400).json({ 
+              error: 'Slug already exists',
+              existing_id: existing[0].id,
+              existing_title: existing[0].title
+            });
+          }
+        } catch (queryErr) {
+          console.error('[POST /api/admin/news] Failed to query existing record:', queryErr);
         }
         // If we can't find the existing record, return a generic error
         return res.status(400).json({ 
