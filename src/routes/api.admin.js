@@ -363,39 +363,52 @@ apiAdminRouter.post('/news', requireAuth, async (req, res) => {
       sanitized_preview: sanitizedContent.substring(0, 200)
     });
     
-    const result = await query('INSERT INTO news(title, slug, content_html, excerpt, cover_media_id, published_at, is_published) VALUES (?,?,?,?,?,?,?)', [
-      String(title).trim(), 
-      String(slug).trim(), 
-      sanitizedContent, 
-      String(excerpt || ''), 
-      cover_media_id ? parseInt(cover_media_id) : null, 
-      published_at || null, 
-      pubValue
-    ]);
-    
-    // Use insertId (not lastInsertRowid) as per db.js query function return format
-    const insertedId = result.insertId;
-    console.log('[POST /api/admin/news] Insert result:', result);
-    console.log('[POST /api/admin/news] Inserted news with ID:', insertedId);
-    
-    // Verify the insert by reading it back (only if we got an ID)
-    if (insertedId) {
-      const verify = await query('SELECT id, title, slug, LENGTH(content_html) as content_length FROM news WHERE id = ?', [insertedId]);
-      console.log('[POST /api/admin/news] Verification query result:', verify);
-      console.log('[POST /api/admin/news] Verification:', verify[0]);
+    try {
+      const result = await query('INSERT INTO news(title, slug, content_html, excerpt, cover_media_id, published_at, is_published) VALUES (?,?,?,?,?,?,?)', [
+        String(title).trim(), 
+        String(slug).trim(), 
+        sanitizedContent, 
+        String(excerpt || ''), 
+        cover_media_id ? parseInt(cover_media_id) : null, 
+        published_at || null, 
+        pubValue
+      ]);
       
-      if (!verify || verify.length === 0) {
-        console.error('[POST /api/admin/news] Verification failed - record not found after insert');
-        // Don't throw error here, just log it - the insert might have succeeded but verification query failed
-        // Return success anyway since the insert completed
+      // Use insertId (not lastInsertRowid) as per db.js query function return format
+      const insertedId = result.insertId;
+      console.log('[POST /api/admin/news] Insert successful:', {
+        insertId: insertedId,
+        affectedRows: result.affectedRows,
+        title: String(title).trim(),
+        slug: String(slug).trim(),
+        content_length: sanitizedContent.length
+      });
+      
+      // If INSERT succeeded (we got an insertId), return success immediately
+      // No need to verify - if INSERT didn't throw an error, the data is in the database
+      if (insertedId) {
+        res.json({ ok: true, id: insertedId });
       } else {
-        console.log('[POST /api/admin/news] Verification successful - content_length:', verify[0].content_length);
+        // This should not happen, but handle it gracefully
+        console.warn('[POST /api/admin/news] INSERT succeeded but no insertId returned');
+        res.json({ ok: true, id: null });
       }
-    } else {
-      console.warn('[POST /api/admin/news] No insertId returned from query result');
+    } catch (insertErr) {
+      // If INSERT fails (e.g., UNIQUE constraint), handle it
+      console.error('[POST /api/admin/news] INSERT failed:', insertErr);
+      if (insertErr.message && insertErr.message.includes('UNIQUE constraint')) {
+        // Check if the slug already exists (might have been inserted in a previous attempt)
+        const existing = await query('SELECT id, title FROM news WHERE slug = ?', [String(slug).trim()]);
+        if (existing && existing.length > 0) {
+          return res.status(400).json({ 
+            error: 'Slug already exists',
+            existing_id: existing[0].id,
+            existing_title: existing[0].title
+          });
+        }
+      }
+      throw insertErr; // Re-throw to be caught by outer try-catch
     }
-    
-    res.json({ ok: true, id: insertedId });
   } catch (err) {
     console.error('[POST /api/admin/news] Error:', err);
     if (err.message && err.message.includes('UNIQUE constraint')) {
