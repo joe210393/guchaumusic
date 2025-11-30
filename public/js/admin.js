@@ -735,6 +735,9 @@
         data.title = String(data.title).trim();
         let originalSlug = String(data.slug).trim();
         
+        // Get id early to check if this is a new article or edit
+        const id = data.id ? String(data.id).trim() : null;
+        
         // Helper function to generate a unique slug from title
         function generateUniqueSlug(title, suffix = '') {
           // Remove emoji and special characters, keep only alphanumeric, Chinese, and basic punctuation
@@ -820,7 +823,7 @@
         const pubFlag = document.getElementById('news-published-flag');
         data.is_published = (pubFlag && pubFlag.checked) ? 1 : 0;
         
-        const id = data.id; 
+        // id was already extracted above, now remove it from data
         delete data.id;
         
         console.log('[Frontend] Saving news:', {
