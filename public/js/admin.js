@@ -2610,7 +2610,7 @@
             try {
               await api('PUT', `/api/admin/events/registrations/${reg.id}`, { status: newStatus });
               statusSelect.style.background = statusColors[newStatus] || '#999';
-              loadLatestRegistrations(); // 重新載入以更新顯示
+              loadLatestRegistrations(registrationsPage); // 重新載入以更新顯示（保持當前頁碼）
             } catch (err) {
               alert('更新狀態失敗：' + (err.message || '未知錯誤'));
               e.target.value = reg.status; // 恢復原值
