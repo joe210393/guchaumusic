@@ -400,19 +400,24 @@ apiPublicRouter.get('/products/:slug', async (req, res) => {
 // 上課內容（YouTube 連結），依會員等級篩選
 apiPublicRouter.get('/courses', async (req, res) => {
   try {
+    // Tier hierarchy: free < basic < advanced < platinum
     const tierOrder = { free: 0, basic: 1, advanced: 2, platinum: 3 };
     const memberTier = req.session?.member?.tier || 'free';
-    const minRank = tierOrder[memberTier] ?? 0;
     
-    // Debug log
-    console.log('[GET /api/public/courses] Member tier:', memberTier, 'minRank:', minRank);
+    // Normalize member tier (ensure it's one of the valid values)
+    const normalizedMemberTier = tierOrder.hasOwnProperty(memberTier) ? memberTier : 'free';
+    const memberRank = tierOrder[normalizedMemberTier];
     
     // Build allowed tiers list - members can see content at their tier or below
+    // platinum (3): can see free(0), basic(1), advanced(2), platinum(3)
+    // advanced (2): can see free(0), basic(1), advanced(2)
+    // basic (1): can see free(0), basic(1)
+    // free (0): can see free(0) only
     const allowedTiers = Object.entries(tierOrder)
-      .filter(([,v]) => v <= minRank)
-      .map(([k]) => k);
+      .filter(([, rank]) => rank <= memberRank)
+      .map(([tier]) => tier);
     
-    console.log('[GET /api/public/courses] Allowed tiers:', allowedTiers);
+    console.log('[GET /api/public/courses] Member tier:', normalizedMemberTier, 'rank:', memberRank, 'allowed tiers:', allowedTiers);
     
     if (allowedTiers.length === 0) {
       return res.json([]);
@@ -436,19 +441,24 @@ apiPublicRouter.get('/courses', async (req, res) => {
 // 上課教材清單，依會員等級篩選
 apiPublicRouter.get('/materials', async (req, res) => {
   try {
+    // Tier hierarchy: free < basic < advanced < platinum
     const tierOrder = { free: 0, basic: 1, advanced: 2, platinum: 3 };
     const memberTier = req.session?.member?.tier || 'free';
-    const minRank = tierOrder[memberTier] ?? 0;
     
-    // Debug log
-    console.log('[GET /api/public/materials] Member tier:', memberTier, 'minRank:', minRank);
+    // Normalize member tier (ensure it's one of the valid values)
+    const normalizedMemberTier = tierOrder.hasOwnProperty(memberTier) ? memberTier : 'free';
+    const memberRank = tierOrder[normalizedMemberTier];
     
     // Build allowed tiers list - members can see content at their tier or below
+    // platinum (3): can see free(0), basic(1), advanced(2), platinum(3)
+    // advanced (2): can see free(0), basic(1), advanced(2)
+    // basic (1): can see free(0), basic(1)
+    // free (0): can see free(0) only
     const allowedTiers = Object.entries(tierOrder)
-      .filter(([,v]) => v <= minRank)
-      .map(([k]) => k);
+      .filter(([, rank]) => rank <= memberRank)
+      .map(([tier]) => tier);
     
-    console.log('[GET /api/public/materials] Allowed tiers:', allowedTiers);
+    console.log('[GET /api/public/materials] Member tier:', normalizedMemberTier, 'rank:', memberRank, 'allowed tiers:', allowedTiers);
     
     if (allowedTiers.length === 0) {
       return res.json([]);

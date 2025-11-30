@@ -153,9 +153,11 @@
             let html = `<div class="card"><h2 class="mb-2">上課內容</h2>`;
             for (const [cat, list] of Object.entries(byCat)) {
               html += `<section class="course-section"><h3 class="course-title">${cat}</h3>`;
+              // Map tier values to display names
+              const tierNames = { free: '免費', basic: '初階', advanced: '高級', platinum: '白金' };
               html += list.map(r=>`
                 <div class="course-item">
-                  <div class="course-item-title"><strong>${r.title}</strong><span class="tier">(${r.min_tier})</span></div>
+                  <div class="course-item-title"><strong>${r.title}</strong><span class="tier">(${tierNames[r.min_tier] || r.min_tier})</span></div>
                   <div class="course-item-actions"><a class="btn ghost course-link" data-href="${r.video_url}" href="#">觀看</a></div>
                 </div>
               `).join('');
@@ -194,7 +196,9 @@
           const rows = await resM.json();
           const host = document.getElementById('tab-materials');
           if (host) {
-            host.innerHTML = `<div class="card"><h2 class="mb-2">教材下載</h2><ul>${rows.map(r=>`<li class="mb-1"><a href="${r.file_path}" download>${r.title || r.file_name}</a> <span style="color:#6b7280">(${r.min_tier})</span></li>`).join('')}</ul></div>`;
+            // Map tier values to display names
+            const tierNames = { free: '免費', basic: '初階', advanced: '高級', platinum: '白金' };
+            host.innerHTML = `<div class="card"><h2 class="mb-2">教材下載</h2><ul>${rows.map(r=>`<li class="mb-1"><a href="${r.file_path}" download>${r.title || r.file_name}</a> <span style="color:#6b7280">(${tierNames[r.min_tier] || r.min_tier})</span></li>`).join('')}</ul></div>`;
           }
         }
       } catch {}

@@ -1337,7 +1337,10 @@
       rows.forEach(m => {
         const displayName = m.chinese_name || m.english_name || m.name || m.email;
         const tr = document.createElement('tr');
-        tr.innerHTML = `<td>${m.id}</td><td>${m.email}</td><td>${displayName}</td><td>${m.tier}</td><td>${m.is_active?'✔':'—'}</td><td><button data-edit="${m.id}">編輯</button> <button data-del="${m.id}">刪除</button> <button data-expand="${m.id}">展開</button></td>`;
+        // Map tier values to display names
+        const tierNames = { free: '免費', basic: '初階', advanced: '高級', platinum: '白金' };
+        const tierDisplay = tierNames[m.tier] || m.tier;
+        tr.innerHTML = `<td>${m.id}</td><td>${m.email}</td><td>${displayName}</td><td>${tierDisplay}</td><td>${m.is_active?'✔':'—'}</td><td><button data-edit="${m.id}">編輯</button> <button data-del="${m.id}">刪除</button> <button data-expand="${m.id}">展開</button></td>`;
         tbody.appendChild(tr);
         const exp = document.createElement('tr');
         exp.className = 'hidden';
@@ -1726,7 +1729,10 @@
         const tbody = cTable.querySelector('tbody'); tbody.innerHTML='';
         rows.forEach(r=>{
           const tr=document.createElement('tr');
-          tr.innerHTML = `<td>${r.id}</td><td>${r.title}</td><td>${r.category||''}</td><td>${r.min_tier}</td><td>${r.is_active?'✔':'—'}</td><td><button data-edit="${r.id}">編輯</button> <button data-del="${r.id}">刪除</button></td>`;
+          // Map tier values to display names
+          const tierNames = { free: '免費', basic: '初階', advanced: '高級', platinum: '白金' };
+          const tierDisplay = tierNames[r.min_tier] || r.min_tier;
+          tr.innerHTML = `<td>${r.id}</td><td>${r.title}</td><td>${r.category||''}</td><td>${tierDisplay}</td><td>${r.is_active?'✔':'—'}</td><td><button data-edit="${r.id}">編輯</button> <button data-del="${r.id}">刪除</button></td>`;
           tbody.appendChild(tr);
         });
         tbody.addEventListener('click', async (e)=>{
