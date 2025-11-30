@@ -753,23 +753,6 @@
           return;
         }
         
-        // Validate content_html - ensure editor has content
-        const editorContent = editor.innerHTML || '';
-        const editorText = editor.textContent || '';
-        const hasContent = editorContent.trim().length > 0 && 
-                          editorContent !== '<div></div>' && 
-                          editorContent !== '<p></p>' && 
-                          editorContent !== '<br>' &&
-                          editorText.trim().length > 0;
-        
-        if (!hasContent) {
-          const confirmEmpty = confirm('警告：文章內容為空。確定要儲存嗎？\n\n如果確定，請點擊「確定」繼續。\n如果要輸入內容，請點擊「取消」後在內容編輯器中輸入。');
-          if (!confirmEmpty) {
-            editor.focus();
-            return;
-          }
-        }
-        
         data.title = String(data.title).trim();
         let originalSlug = String(data.slug).trim();
         
@@ -815,6 +798,21 @@
         // Check both innerHTML and textContent to ensure we capture content
         let editorContent = editor.innerHTML || '';
         const editorText = editor.textContent || '';
+        
+        // Validate content_html - ensure editor has content
+        const hasContent = editorContent.trim().length > 0 && 
+                          editorContent !== '<div></div>' && 
+                          editorContent !== '<p></p>' && 
+                          editorContent !== '<br>' &&
+                          editorText.trim().length > 0;
+        
+        if (!hasContent) {
+          const confirmEmpty = confirm('警告：文章內容為空。確定要儲存嗎？\n\n如果確定，請點擊「確定」繼續。\n如果要輸入內容，請點擊「取消」後在內容編輯器中輸入。');
+          if (!confirmEmpty) {
+            editor.focus();
+            return;
+          }
+        }
         
         // If innerHTML is empty or only contains whitespace/br tags, use textContent
         const cleanHtml = editorContent.replace(/<br\s*\/?>/gi, '').replace(/&nbsp;/gi, ' ').trim();
