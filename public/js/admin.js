@@ -225,6 +225,20 @@
       uploadInput.value = '';
       uploadInput.click();
     });
+    
+    // Delete background image (clear input to restore default background)
+    document.addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-delete]');
+      if (!btn) return;
+      e.preventDefault();
+      const inputId = btn.getAttribute('data-delete');
+      const input = document.getElementById(inputId);
+      if (input) {
+        if (confirm('確定要刪除背景圖片嗎？刪除後將恢復為預設底色。')) {
+          input.value = '';
+        }
+      }
+    });
     uploadInput?.addEventListener('change', async () => {
       if (!uploadInput.files || !uploadInput.files[0]) return;
       const csrf = await getCsrf();
