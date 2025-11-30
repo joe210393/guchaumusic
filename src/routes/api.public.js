@@ -399,22 +399,74 @@ apiPublicRouter.get('/products/:slug', async (req, res) => {
 
 // 上課內容（YouTube 連結），依會員等級篩選
 apiPublicRouter.get('/courses', async (req, res) => {
-  const tierOrder = { free: 0, basic: 1, advanced: 2, platinum: 3 };
-  const memberTier = req.session?.member?.tier || 'free';
-  const minRank = tierOrder[memberTier] ?? 0;
-  const allowedTiers = Object.entries(tierOrder).filter(([,v]) => v <= minRank).map(([k]) => `'${k}'`).join(',');
-  const rows = await query(`SELECT id, title, video_url, category, min_tier FROM course_contents WHERE is_active = 1 AND min_tier IN (${allowedTiers}) ORDER BY id DESC`);
-  res.json(rows);
+  try {
+    const tierOrder = { free: 0, basic: 1, advanced: 2, platinum: 3 };
+    const memberTier = req.session?.member?.tier || 'free';
+    const minRank = tierOrder[memberTier] ?? 0;
+    
+    // Debug log
+    console.log('[GET /api/public/courses] Member tier:', memberTier, 'minRank:', minRank);
+    
+    // Build allowed tiers list - members can see content at their tier or below
+    const allowedTiers = Object.entries(tierOrder)
+      .filter(([,v]) => v <= minRank)
+      .map(([k]) => k);
+    
+    console.log('[GET /api/public/courses] Allowed tiers:', allowedTiers);
+    
+    if (allowedTiers.length === 0) {
+      return res.json([]);
+    }
+    
+    // Use parameterized query to avoid SQL injection
+    const placeholders = allowedTiers.map(() => '?').join(',');
+    const rows = await query(
+      `SELECT id, title, video_url, category, min_tier FROM course_contents WHERE is_active = 1 AND min_tier IN (${placeholders}) ORDER BY id DESC`,
+      allowedTiers
+    );
+    
+    console.log('[GET /api/public/courses] Returning', rows.length, 'courses');
+    res.json(rows);
+  } catch (err) {
+    console.error('[GET /api/public/courses] Error:', err);
+    res.status(500).json({ error: 'Internal Server Error', details: err.message });
+  }
 });
 
 // 上課教材清單，依會員等級篩選
 apiPublicRouter.get('/materials', async (req, res) => {
-  const tierOrder = { free: 0, basic: 1, advanced: 2, platinum: 3 };
-  const memberTier = req.session?.member?.tier || 'free';
-  const minRank = tierOrder[memberTier] ?? 0;
-  const allowedTiers = Object.entries(tierOrder).filter(([,v]) => v <= minRank).map(([k]) => `'${k}'`).join(',');
-  const rows = await query(`SELECT cm.id, cm.title, cm.min_tier, m.file_path, m.file_name FROM course_materials cm JOIN media m ON m.id = cm.media_id WHERE cm.is_active = 1 AND cm.min_tier IN (${allowedTiers}) ORDER BY cm.id DESC`);
-  res.json(rows);
+  try {
+    const tierOrder = { free: 0, basic: 1, advanced: 2, platinum: 3 };
+    const memberTier = req.session?.member?.tier || 'free';
+    const minRank = tierOrder[memberTier] ?? 0;
+    
+    // Debug log
+    console.log('[GET /api/public/materials] Member tier:', memberTier, 'minRank:', minRank);
+    
+    // Build allowed tiers list - members can see content at their tier or below
+    const allowedTiers = Object.entries(tierOrder)
+      .filter(([,v]) => v <= minRank)
+      .map(([k]) => k);
+    
+    console.log('[GET /api/public/materials] Allowed tiers:', allowedTiers);
+    
+    if (allowedTiers.length === 0) {
+      return res.json([]);
+    }
+    
+    // Use parameterized query to avoid SQL injection
+    const placeholders = allowedTiers.map(() => '?').join(',');
+    const rows = await query(
+      `SELECT cm.id, cm.title, cm.min_tier, m.file_path, m.file_name FROM course_materials cm JOIN media m ON m.id = cm.media_id WHERE cm.is_active = 1 AND cm.min_tier IN (${placeholders}) ORDER BY cm.id DESC`,
+      allowedTiers
+    );
+    
+    console.log('[GET /api/public/materials] Returning', rows.length, 'materials');
+    res.json(rows);
+  } catch (err) {
+    console.error('[GET /api/public/materials] Error:', err);
+    res.status(500).json({ error: 'Internal Server Error', details: err.message });
+  }
 });
 
 // 聯絡表單送出（會寄通知信）
