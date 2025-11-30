@@ -2144,8 +2144,25 @@
         const events = await api('GET', `/api/admin/events?year=${currentYear}&month=${currentMonth + 1}`);
         if (!eventsTable) return;
         
+        // 過濾掉已結束的活動（event_date < 今天）
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const todayStr = today.toISOString().split('T')[0];
+        
+        const activeEvents = events.filter(e => {
+          const eventDate = new Date(e.event_date);
+          eventDate.setHours(0, 0, 0, 0);
+          const eventDateStr = eventDate.toISOString().split('T')[0];
+          return eventDateStr >= todayStr;
+        });
+        
         eventsTable.innerHTML = '';
-        events.forEach(e => {
+        if (activeEvents.length === 0) {
+          eventsTable.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:40px;color:#999;">本月無活動</td></tr>';
+          return;
+        }
+        
+        activeEvents.forEach(e => {
           const tr = document.createElement('tr');
           const typeNames = { course: '音樂課程', performance: '商業演出', space: '共享空間租借' };
           tr.innerHTML = `
@@ -2345,10 +2362,34 @@
       // 編輯模式：單個活動更新
       if (id) {
         try {
+          // 從選中的日期中獲取 event_date（編輯時應該只有一個日期）
+          if (selectedDates.size > 0) {
+            const selectedDate = Array.from(selectedDates)[0];
+            data.event_date = selectedDate;
+          }
+          // 如果沒有選中日期，嘗試從表單中獲取（fallback）
+          if (!data.event_date) {
+            const dateInput = document.getElementById('event-date');
+            if (dateInput && dateInput.value) {
+              data.event_date = dateInput.value;
+            }
+          }
+          
           await api('PUT', `/api/admin/events/${id}`, data);
           formModal.style.display = 'none';
+          // 如果日期改變了，切換到新的月份
+          if (data.event_date) {
+            const newDate = new Date(data.event_date);
+            const newYear = newDate.getFullYear();
+            const newMonth = newDate.getMonth();
+            if (newYear !== currentYear || newMonth !== currentMonth) {
+              currentYear = newYear;
+              currentMonth = newMonth;
+            }
+          }
           renderCalendar();
           loadEventsList();
+          alert('儲存成功');
         } catch (err) {
           alert('儲存失敗：' + (err.message || '未知錯誤'));
         }
@@ -2443,23 +2484,69 @@
       }
     });
     
-    // 載入最新預約記錄
-    async function loadLatestRegistrations() {
+    // 載入最新預約記錄（帶分頁）
+    let registrationsPage = 1;
+    const registrationsPerPage = 10;
+    let totalRegistrations = 0;
+    
+    async function loadLatestRegistrations(page = 1) {
       const container = document.getElementById('latest-registrations');
       if (!container) return;
       
       try {
-        const registrations = await api('GET', '/api/admin/events/registrations/latest?limit=20');
+        // 先獲取總數（通過請求一個較大的 limit 來估算，或使用分頁 API）
+        // 為了簡單起見，我們先獲取所有記錄，然後在前端分頁
+        const allRegistrations = await api('GET', '/api/admin/events/registrations/latest?limit=100');
+        totalRegistrations = allRegistrations ? allRegistrations.length : 0;
         
-        if (!registrations || registrations.length === 0) {
+        if (!allRegistrations || allRegistrations.length === 0) {
           container.innerHTML = '<div style="text-align:center;padding:40px 20px;color:#999;">尚無預約記錄</div>';
           return;
         }
+        
+        // 前端分頁
+        const startIndex = (page - 1) * registrationsPerPage;
+        const endIndex = startIndex + registrationsPerPage;
+        const registrations = allRegistrations.slice(startIndex, endIndex);
+        const totalPages = Math.ceil(totalRegistrations / registrationsPerPage);
         
         const typeNames = { course: '音樂課程', performance: '商業演出', space: '共享空間' };
         const typeColors = { course: '#4A90E2', performance: '#E94B3C', space: '#7B68EE' };
         
         container.innerHTML = '';
+        
+        // 顯示分頁控制
+        if (totalPages > 1) {
+          const pager = document.createElement('div');
+          pager.style.display = 'flex';
+          pager.style.justifyContent = 'space-between';
+          pager.style.alignItems = 'center';
+          pager.style.marginBottom = '12px';
+          pager.style.padding = '8px';
+          pager.style.background = '#f9fafb';
+          pager.style.borderRadius = '6px';
+          pager.innerHTML = `
+            <button id="reg-prev-page" class="btn ghost sm" ${page === 1 ? 'disabled' : ''} style="padding:4px 8px;font-size:12px;">‹ 上一頁</button>
+            <span style="font-size:12px;color:#666;">第 ${page} / ${totalPages} 頁（共 ${totalRegistrations} 筆）</span>
+            <button id="reg-next-page" class="btn ghost sm" ${page === totalPages ? 'disabled' : ''} style="padding:4px 8px;font-size:12px;">下一頁 ›</button>
+          `;
+          container.appendChild(pager);
+          
+          document.getElementById('reg-prev-page')?.addEventListener('click', () => {
+            if (page > 1) {
+              registrationsPage = page - 1;
+              loadLatestRegistrations(registrationsPage);
+            }
+          });
+          
+          document.getElementById('reg-next-page')?.addEventListener('click', () => {
+            if (page < totalPages) {
+              registrationsPage = page + 1;
+              loadLatestRegistrations(registrationsPage);
+            }
+          });
+        }
+        
         registrations.forEach(reg => {
           const date = new Date(reg.event_date);
           const formattedDate = `${date.getFullYear()}/${date.getMonth() + 1}/${date.getDate()}`;
