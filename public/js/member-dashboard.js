@@ -33,6 +33,10 @@
         function fmtVal(key, val){
           if (val == null) return '';
           if (key === 'gender') return val === 'male' ? '男' : (val === 'female' ? '女' : '其他');
+          if (key === 'tier') {
+            const tierNames = { free: '免費', basic: '初階', advanced: '高級', platinum: '白金' };
+            return tierNames[val] || val;
+          }
           if (key === 'birth_date' || key === 'created_at') {
             try {
               return new Intl.DateTimeFormat('zh-TW', { timeZone: 'Asia/Taipei', year:'numeric', month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit', second:'2-digit', hour12: false }).format(new Date(val));
