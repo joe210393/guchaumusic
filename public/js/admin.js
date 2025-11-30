@@ -815,6 +815,12 @@
         }
       } catch (err) {
         console.error('Error saving news:', err);
+        console.error('Error details:', {
+          message: err.message,
+          stack: err.stack,
+          name: err.name
+        });
+        
         const errorMsg = err.message || '未知錯誤';
         // Try to parse error message if it's JSON
         let displayMsg = errorMsg;
@@ -829,7 +835,13 @@
         } catch {
           // Not JSON, use as-is
         }
-        alert('儲存失敗：' + displayMsg);
+        
+        // If it's a slug conflict, suggest editing the existing item
+        if (displayMsg.includes('Slug already exists')) {
+          alert('儲存失敗：Slug 已存在。這可能是因為第一次儲存已成功，但返回了錯誤。請重新整理頁面後編輯該項目。');
+        } else {
+          alert('儲存失敗：' + displayMsg);
+        }
       }
     });
   }
